@@ -22,7 +22,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 - [ ] **chai-boilover** — pot with a milk skin and a rising foam level; why it boils over.
 
 ## AI and classifiers
-- [ ] **threshold-sieve** — a sieve on a slider over two piles of beads (positives, negatives); precision and recall move together as it slides.
+- [x] **threshold-sieve** — 112 beads on a score ruler, a hovering sieve blade on rails; beads right of it lift on pins; two dial gauges read precision and recall.
 - [ ] **class-imbalance** — a scale with 1,000 grains on one side and 10 on the other; why accuracy lies.
 
 ## Shelved
