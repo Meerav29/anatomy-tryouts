@@ -13,7 +13,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 ## Go-karting and simulators
 - [ ] **ackermann** — four-bar steering linkage on a plate; the inside wheel turns more than the outside.
 - [ ] **force-feedback** — wheel on a motor, spring and torque dial: what a sim sends vs what a real rack does.
-- [ ] **friction-circle** — a physical disc grip budget with a pointer that cannot leave it; braking and cornering draw from the same grip.
+- [x] **friction-circle** — XY pen plotter over a dish; a puck driven by accel/brake/corner demand is stopped by a ring of pegs at mu*g. Slick/inter/wet shrinks the ring; a pen traces the g-g path; lamp lights on a slide.
 
 ## Aviation (prop planes)
 - [ ] **carb-ice** — venturi on a stand with a temperature dial showing the drop that can ice it up.
