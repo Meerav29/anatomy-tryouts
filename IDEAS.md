@@ -6,7 +6,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 - [x] **accretion** — dust beads on a tray, a protoplanet on an arm, a capture hoop widened by gravitational focusing. Ends at isolation mass.
 
 ## F1 and racing
-- [ ] **tyre-window** — rubber block on a heated drum with a grip-vs-temperature dial. Too cold: no grip. Too hot: graining. The narrow window drivers talk about.
+- [x] **tyre-window** — reciprocating friction tester: rubber block on a heated platen, spring-measured grip, a 30-slat comb of grip vs temperature with a probe. Window ~80-102 C; hot = blisters, wear x18, crumbs.
 - [ ] **drs-slot-gap** — two flaps on a rail, a pin that opens the gap, a comb of smoke lines that stalls when it opens.
 - [ ] **undercut** — two cars on a conveyor, a pit-lane switch. Fresh-tyre gain per lap vs a fixed stop cost, so the crossover lap falls out of the numbers.
 
