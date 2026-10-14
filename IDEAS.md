@@ -23,7 +23,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 
 ## AI and classifiers
 - [x] **threshold-sieve** — 112 beads on a score ruler, a hovering sieve blade on rails; beads right of it lift on pins; two dial gauges read precision and recall.
-- [ ] **class-imbalance** — a scale with 1,000 grains on one side and 10 on the other; why accuracy lies.
+- [x] **class-imbalance** — 200 bead wells, a knob thins positives from 50% to 1%; always-no accuracy climbs to 0.99 while a fixed 90%/5% model keeps recall and loses precision.
 
 ## Shelved
 - Kart solid axle (no differential), prop governor, espresso pressure profile, calibration jars, hash table, tides, sky-is-blue: liked, not picked yet.
