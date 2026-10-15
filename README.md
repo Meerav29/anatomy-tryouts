@@ -9,6 +9,7 @@ Interactive isometric figures: small physical machines that explain an idea. Bui
 | [class-imbalance](class-imbalance/) | Why accuracy lies: thin the positives and watch precision collapse |
 | [friction-circle](friction-circle/) | One budget of tyre grip shared between braking, accelerating and cornering |
 | [tyre-window](tyre-window/) | Why a tyre only works in a narrow temperature window |
+| [chai-boilover](chai-boilover/) | Why milk boils over and water doesn't: a skin traps the steam |
 
 More are planned: see [IDEAS.md](IDEAS.md).
 
@@ -29,3 +30,5 @@ Open the HTML file in a browser. Move the pointer across the figure to change th
 ![friction circle](friction-circle/preview.png)
 
 ![tyre window](tyre-window/preview.png)
+
+![chai boilover](chai-boilover/preview.png)
