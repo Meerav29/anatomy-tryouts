@@ -16,7 +16,7 @@ export const RIG = {
   BURST_OPEN: 0.7, // extra popping when there is no skin
   SKIN_RATE: 0.25, // per second at full skin temperature
   SKIN_FROM: [55, 85], // skin forms across this span
-  SPILL: 1.2, // rim overshoot spilled per second
+  SPILL: 0.6, // rim overshoot spilled per second
   PERIOD: 44, // seconds for the scripted run
 };
 

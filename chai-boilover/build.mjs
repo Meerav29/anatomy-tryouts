@@ -12,46 +12,56 @@ const OUT = theme === "light" ? "chai-boilover-light.html" : "chai-boilover.html
 const WIDTH = 640;
 const HEIGHT = 420;
 
-const PLATE = { x: -134, y: -78, w: 268, d: 182, r: 10 };
+// Two glass-fronted tanks, each a one-pot-thick slice, so the inside of the pot can be seen from the front.
+const PLATE = { x: -112, y: -42, w: 224, d: 94, r: 8 };
 const PLATE_H = 12;
 const FOOT_H = 5;
 
-// two glass pots on one plate, side by side; the water pot's handle points left, the milk pot's right
-const POT_R = 34;
-const POT_Y = -22;
-const POTS = [
-  { key: "water", label: "WATER", x: -66, side: -1 },
-  { key: "milk", label: "MILK", x: 66, side: 1 },
-];
-const PAD_R = 27;
-const PAD_H = 3;
-const FLOOR_H = 3;
-const Z0 = PAD_H + FLOOR_H; // bottom of the glass
-const SPAN = 52; // glass height, which is one rim height of liquid
+const TW = 82; // tank outer width
+const DP = 18; // tank depth
+const WALL = 3;
+const YF = -16; // the glass front
+const YB = YF - DP;
+const BASE_H = 3;
+const FLOOR_H = 4;
+const Z0 = BASE_H + FLOOR_H; // inside floor
+const SPAN = 64; // inner height, which is one rim height of liquid
 const RIM_Z = Z0 + SPAN;
-const LIQ_R = POT_R - 1.4;
-const LEVEL_MAX = 1.3;
-const levelZ = (level) => Z0 + Math.min(level, 1.25) * SPAN;
-
-const GAUGES = [
-  { at: [-66, 72], label: "WATER", key: "water", count: 13, every: 5, arc: [1 / LEVEL_MAX, 1] },
-  { at: [0, 72], label: "HEAT", key: "heat", count: 10, every: 5 },
-  { at: [66, 72], label: "MILK", key: "milk", count: 13, every: 5, arc: [1 / LEVEL_MAX, 1] },
+const TOP_Z = RIM_Z + 2; // wall lip
+const IX = TW - WALL * 2; // inner width
+const IY0 = YB + WALL;
+const IY1 = YF - 0.6;
+const TANKS = [
+  { key: "water", label: "WATER", x: -52 },
+  { key: "milk", label: "MILK", x: 52 },
 ];
-const GAUGE_R = 17;
-const GAUGE_Z = 24;
-const GAUGE_H = 10;
-const GAUGE_TOP = GAUGE_Z + GAUGE_H;
-const GAUGE_FROM = (-135 * Math.PI) / 180;
-const GAUGE_SPAN = (270 * Math.PI) / 180;
+const THERMO = { water: -102, milk: 4 };
+const THERMO_Y = YF + 2;
+const THERMO_FULL = 50; // mercury height at 100 C
 
-const BUBBLES = Array.from({ length: 16 }, (_, i) => {
-  const a = i * 2.399;
-  const r = (POT_R - 8) * Math.sqrt((i + 0.5) / 16);
-  return [Math.round(r * Math.cos(a) * 10) / 10, Math.round(r * Math.sin(a) * 10) / 10];
-});
+const RAIL = { x: -84, y: 28, w: 168, d: 7, r: 3.5 };
+const KNOB_Y = RAIL.y + RAIL.d / 2;
+const KNOB_X0 = -76;
+const KNOB_SPAN = 152;
+const knobX = (heat) => KNOB_X0 + KNOB_SPAN * heat;
+const BOIL_OVER_HEAT = 0.5; // the burner setting above which the milk goes over
 
-const START_CLOCK = 15;
+// packed bubbles that make up the foam: row k sits k * 5.6 above the liquid line
+const FOAM = (() => {
+  let seed = 90210;
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const out = [];
+  for (let row = 0; row < 14; row++) {
+    const cols = row % 2 ? 10 : 11;
+    for (let i = 0; i < cols; i++) {
+      const r = Math.round((3.1 + rand() * 0.7) * 10) / 10;
+      out.push([Math.round((-34.5 + i * 6.9 + (row % 2 ? 3.5 : 0) + (rand() - 0.5) * 0.8) * 10) / 10, Math.round((3.4 + row * 5.6 + (rand() - 0.5) * 0.8) * 10) / 10, r]);
+    }
+  }
+  return out;
+})();
+
+const START_CLOCK = 16;
 const sim = { heat: R.heatAt(0), water: R.newPot(), milk: R.newPot() };
 for (let t = 0; t < START_CLOCK; t += 1 / 60) {
   sim.heat = R.heatAt(t);
@@ -63,12 +73,11 @@ const startState = { heat: sim.heat, water: sim.water, milk: sim.milk };
 const P = k.fitProjection(
   [
     ...k.boxCorners(PLATE, -PLATE_H - FOOT_H, 0),
-    ...POTS.flatMap((p) => [[p.x - POT_R - 24, POT_Y, RIM_Z + 12], [p.x + POT_R + 24, POT_Y, RIM_Z + 12]]),
-    ...GAUGES.map((g) => [g.at[0], g.at[1], GAUGE_TOP + 2]),
+    ...TANKS.flatMap((t) => [[t.x - TW / 2 - 6, YB, RIM_Z + 42], [t.x + TW / 2 + 6, YF + 12, RIM_Z + 42]]),
   ],
   WIDTH,
   HEIGHT,
-  { pad: 14, azimuth: 62, elevation: 38 },
+  { pad: 12, azimuth: 66, elevation: 28 },
 );
 
 const at = (point) => k.iso(point, P);
@@ -76,11 +85,12 @@ const S = (paths, style) => k.solidSvg(paths, style);
 const L = (d, style) => k.lineSvg(d, style);
 const D = (points, style) => k.dotsSvg(points, style);
 const byDepth = (points) => [...points].sort((a, b) => k.depthOf([a[0], a[1], 0], P) - k.depthOf([b[0], b[1], 0], P));
+const red = (text) => text.replace("<text ", '<text style="fill:var(--anatomy-red)" ');
 
-/* ---------------------------------------------------------------- plate */
+/* ---------------------------------------------------------------- plate and heat control */
 function plate() {
   const out = [`<path class="iso-halo" d="${k.haloOf(PLATE, -PLATE_H - FOOT_H, PLATE_H, P)}"/>`];
-  for (const [x, y] of byDepth(k.corners(PLATE, 22))) {
+  for (const [x, y] of byDepth(k.corners(PLATE, 20))) {
     out.push(S(k.cylinder(x, y, 7, -PLATE_H - FOOT_H, 1.6, P, 28), { tone: "lo" }));
     out.push(S(k.cylinder(x, y, 5.4, -PLATE_H - FOOT_H + 1.6, FOOT_H - 1.6, P, 28), { tone: "mid" }));
   }
@@ -89,91 +99,72 @@ function plate() {
   const screws = k.corners(PLATE, 10);
   out.push(L(screws.map(([x, y]) => k.ring(x, y, 2.2, 0, P, 16)).join(""), { tone: "lo" }));
   out.push(D(screws.map(([x, y]) => at([x, y, 0])), { size: 0.5 }));
-  // vents down the left side
-  for (let i = 0; i < 8; i++) out.push(L(k.planOutline({ x: -142, y: -70 + i * 10, w: 2.6, d: 6, r: 1.3 }, 0, P, 3), { tone: "lo" }));
-  // pot labels on the plate, in front of each burner
-  for (const p of POTS) out.push(k.faceTextSvg(k.topMatrix([p.x, POT_Y + POT_R + 12], 0, P, "x"), p.label, { size: 2.6, tone: "lo", anchor: "middle" }));
   return out.join("");
 }
 
-/* ---------------------------------------------------------------- gauges */
-function gauge({ at: [x, y], label, count, every, arc }) {
-  const out = [`<path class="iso-halo" d="${k.cylinder(x, y, 12, 0, 0.1, P, 32).fill}" style="filter:blur(3px)"/>`];
-  out.push(S(k.cylinder(x, y, 11, 0, 3, P, 40, 0.5), { tone: "mid" }));
-  out.push(D(Array.from({ length: 4 }, (_, i) => at([x + 8 * Math.cos(i * 1.5708 + 0.785), y + 8 * Math.sin(i * 1.5708 + 0.785), 3])), { size: 0.4 }));
-  out.push(S(k.cylinder(x, y, 4.2, 3, GAUGE_Z - 6, P, 24), { tone: "mid", crease: "none" }));
-  out.push(L([8, 14].map((z) => k.sideArc(x, y, 4.2, z, P, 12)).join(""), { tone: "faint" }));
-  out.push(S(k.cylinder(x, y, 6.4, GAUGE_Z - 6, 3, P, 24), { tone: "mid" }));
-  out.push(S(k.cylinder(x, y, GAUGE_R, GAUGE_Z, GAUGE_H, P, 64, 0.8), { tone: "hi", crease: "lo" }));
-  out.push(L(k.knurl(x, y, GAUGE_R, GAUGE_TOP - 3.4, GAUGE_TOP, 84, P, 0.3), { tone: "lo" }));
-  out.push(L(k.sideArc(x, y, GAUGE_R, GAUGE_TOP - 3.4, P, 40), { tone: "faint" }));
-  out.push(L(k.ring(x, y, GAUGE_R - 2.2, GAUGE_TOP, P, 64), { tone: "lo" }));
-  const ticks = k.radialTicks(x, y, GAUGE_R - 3.2, count, every, GAUGE_TOP, [1.2, 2.6], P, GAUGE_FROM, GAUGE_SPAN);
+function control() {
+  const out = [];
+  out.push(S(k.slabOf(RAIL, 0, 3, P, 4, 0.5), { tone: "mid" }));
+  out.push(L(k.lineOnTop([KNOB_X0, KNOB_Y], [KNOB_X0 + KNOB_SPAN, KNOB_Y], 3, P), { tone: "lo", free: true }));
+  // the span of burner settings that boils the milk over
+  out.push(`<path class="iso-line" data-tone="red" d="${k.lineOnTop([knobX(BOIL_OVER_HEAT), KNOB_Y], [knobX(1), KNOB_Y], 3, P)}" style="stroke-width:2"/>`);
+  const ticks = k.topTicks(KNOB_X0, KNOB_X0 + KNOB_SPAN, KNOB_SPAN / 10, 5, RAIL.y - 5, 0, [1.6, 3], P);
   out.push(L(ticks.minor, { tone: "lo" }), L(ticks.major, { tone: "mid" }));
-  // the rim zone, as a bold arc inside the ticks: a needle in it means over the edge
-  if (arc) {
-    const a0 = GAUGE_FROM + GAUGE_SPAN * arc[0];
-    const a1 = GAUGE_FROM + GAUGE_SPAN * arc[1];
-    const pts = Array.from({ length: 10 }, (_, i) => {
-      const a = a0 + ((a1 - a0) * i) / 9;
-      return [x + Math.sin(a) * (GAUGE_R - 6.4), y - Math.cos(a) * (GAUGE_R - 6.4)];
-    });
-    out.push(`<path class="iso-line" data-tone="lit" data-free="both" d="${k.onTop(pts, GAUGE_TOP, P)}" style="stroke-width:1.5"/>`);
+  const label = (x, text, style = {}) => k.faceTextSvg(k.topMatrix([x, RAIL.y + RAIL.d + 7.5], 0, P, "x"), text, { size: 2.9, tone: "hi", anchor: "middle", ...style });
+  out.push(label(knobX(0), "OFF"), label(knobX(0.3), "SIMMER"), red(label(knobX(0.78), "ROLLING BOIL: MILK GOES OVER")));
+  return out.join("");
+}
+function knob() {
+  const out = [];
+  out.push(S(k.cylinder(0, KNOB_Y, 6.4, 3, 8, P, 40, 0.8), { tone: "hi", lit: true, crease: "lo" }));
+  out.push(L(k.knurl(0, KNOB_Y, 6.4, 3, 6, 36, P, 0.3), { tone: "lo" }));
+  out.push(L(k.ring(0, KNOB_Y, 4.2, 11, P, 32), { tone: "lo" }));
+  out.push(`<path class="iso-line" data-tone="lit" data-free="both" d="${k.lineOnTop([0, KNOB_Y + 0.6], [0, KNOB_Y + 5.2], 11.2, P)}" style="stroke-width:1.2"/>`);
+  return out.join("");
+}
+
+/* ---------------------------------------------------------------- tanks */
+function tankBack(t) {
+  const out = [];
+  const x0 = t.x - TW / 2;
+  const baseFront = YF + 9;
+  out.push(S(k.slabOf({ x: x0 - 2, y: YB - 2, w: TW + 4, d: baseFront - YB + 2, r: 2 }, 0, BASE_H, P, 4, 0.4), { tone: "mid" }));
+  out.push(S(k.slabOf({ x: x0, y: YB, w: TW, d: DP, r: 1 }, BASE_H, FLOOR_H, P, 3, 0.3), { tone: "mid" }));
+  out.push(S(k.slabOf({ x: x0, y: YB, w: TW, d: WALL, r: 0.6 }, Z0, TOP_Z - Z0, P, 2, 0.3), { tone: "mid" }));
+  out.push(S(k.slabOf({ x: x0, y: YB, w: WALL, d: DP, r: 0.6 }, Z0, TOP_Z - Z0, P, 2, 0.3), { tone: "mid" }));
+  out.push(S(k.slabOf({ x: x0 + TW - WALL, y: YB, w: WALL, d: DP, r: 0.6 }, Z0, TOP_Z - Z0, P, 2, 0.3), { tone: "mid" }));
+  // the label strip and heater lamps on the base's front margin
+  out.push(k.faceTextSvg(k.topMatrix([x0 + 5, YF + 6.3], BASE_H, P, "x"), t.label, { size: 3, tone: "hi", anchor: "start" }));
+  out.push(t.key === "water" ? "" : "");
+  out.push(Array.from({ length: 6 }, (_, i) => `<g data-lamp="${t.key}-${i}">${S(k.cylinder(x0 + 38 + i * 6.8, YF + 4.6, 1.7, BASE_H, 1.2, P, 16, 0.2), { tone: "hi" })}</g>`).join(""));
+  return out.join("");
+}
+function tankFront(t) {
+  const out = [];
+  const x0 = t.x - TW / 2;
+  const x1 = t.x + TW / 2;
+  // the glass pane
+  const pane = [[x0, YF, BASE_H], [x1, YF, BASE_H], [x1, YF, TOP_Z], [x0, YF, TOP_Z]].map(at);
+  out.push(L(k.pathOf(pane, true), { tone: "mid" }));
+  out.push(L(k.segment([x0 + 7, YF, TOP_Z - 6], [x0 + 15, YF, TOP_Z - 24], P) + k.segment([x0 + 12, YF, TOP_Z - 5], [x0 + 18, YF, TOP_Z - 19], P), { tone: "faint", free: true }));
+  // the rim line
+  out.push(L(k.segment([x0, YF, RIM_Z], [x1, YF, RIM_Z], P), { tone: "red", dashed: true }));
+  const note = t.key === "water" ? "STEAM ESCAPES" : "STEAM TRAPPED UNDER THE SKIN";
+  out.push(`<g data-part="note-${t.key}" opacity="0">${k.faceTextSvg(k.sideMatrix([t.x, YF], RIM_Z + 38, P, "left"), note, { size: 3.3, tone: "hi", anchor: "middle" })}</g>`);
+  return out.join("");
+}
+
+function thermometer(key) {
+  const x = THERMO[key];
+  const out = [];
+  out.push(S(k.cylinder(x, THERMO_Y, 4.6, BASE_H, 3, P, 24, 0.4), { tone: "mid" }));
+  out.push(S(k.slabOf({ x: x - 2.2, y: THERMO_Y - 2.2, w: 4.4, d: 4.4, r: 2.2 }, BASE_H + 3, THERMO_FULL + 14, P, 8, 0.2), { tone: "mid", crease: "none" }));
+  const zb = BASE_H + 3 + 2 + THERMO_FULL * 0.0;
+  for (const [T, len] of [[20, 2.4], [60, 2.4], [100, 4.4]]) {
+    const z = 8 + ((T - 20) / 80) * THERMO_FULL;
+    const sx = key === "water" ? 1 : -1;
+    out.push(L(k.segment([x + sx * 2.2, THERMO_Y + 2.2, z], [x + sx * (2.2 + len), THERMO_Y + 2.2, z], P), { tone: T === 100 ? "red" : "mid", free: true }));
   }
-  out.push(L(k.ring(x, y, 1.7, GAUGE_TOP, P, 16), { tone: "mid" }));
-  out.push(k.faceTextSvg(k.topMatrix([x, y + 9], GAUGE_TOP, P, "x"), label, { size: 2.1, tone: "lo", anchor: "middle" }));
-  return out.join("");
-}
-const gaugeValue = (key, v) => Math.min(1, Math.max(0, key === "heat" ? v : v / LEVEL_MAX));
-const needleAt = ({ at: [x, y], key }, v) => {
-  const angle = GAUGE_FROM + GAUGE_SPAN * gaugeValue(key, v);
-  const sx = Math.sin(angle);
-  const sy = -Math.cos(angle);
-  return k.lineOnTop([x - sx * 3.4, y - sy * 3.4], [x + sx * (GAUGE_R - 4), y + sy * (GAUGE_R - 4)], GAUGE_TOP + 0.2, P);
-};
-
-/* ---------------------------------------------------------------- pots */
-// a ring split at the silhouette: the back half is drawn behind the liquid, the front half over it
-function halves(cx, cy, r, z) {
-  const a = (P.azimuth * Math.PI) / 180;
-  const N = 48;
-  const start = a + Math.PI / 2; // the tangent points are samples, so the vertical edges land exactly on the rings
-  const pts = Array.from({ length: N + 1 }, (_, i) => {
-    const t = start + (i / N) * Math.PI * 2;
-    return [cx + r * Math.cos(t), cy + r * Math.sin(t), t];
-  });
-  const front = pts.slice(0, N / 2 + 1);
-  const back = pts.slice(N / 2);
-  return { front: k.onTop(front.map(([x, y]) => [x, y]), z, P), back: k.onTop(back.map(([x, y]) => [x, y]), z, P), edges: [pts[0], pts[N / 2]] };
-}
-
-function burner(p) {
-  const out = [];
-  out.push(`<g data-part="pad-${p.key}">${S(k.cylinder(p.x, POT_Y, PAD_R, 0, PAD_H, P, 40, 0.5), { tone: "mid" })}</g>`);
-  out.push(L([9, 16, 23].map((r) => k.ring(p.x, POT_Y, r, PAD_H, P, 40)).join(""), { tone: "lo" }));
-  return out.join("");
-}
-function potBack(p) {
-  const out = [`<g data-part="puddle-${p.key}"></g>`];
-  out.push(S(k.cylinder(p.x, POT_Y, POT_R + 1.2, PAD_H, FLOOR_H, P, 48, 0.4), { tone: "mid" }));
-  const base = halves(p.x, POT_Y, POT_R, Z0);
-  const rim = halves(p.x, POT_Y, POT_R, RIM_Z);
-  out.push(L(base.back + rim.back, { tone: "lo" }));
-  return out.join("");
-}
-function potFront(p) {
-  const out = [];
-  const base = halves(p.x, POT_Y, POT_R, Z0);
-  const rim = halves(p.x, POT_Y, POT_R, RIM_Z);
-  out.push(L(base.front + rim.front, { tone: "mid" }));
-  const edge = (e) => k.segment([e[0], e[1], Z0], [e[0], e[1], RIM_Z], P);
-  out.push(L(base.edges.map(edge).join(""), { tone: "mid" }));
-  // rim bead and a faint fill-line ring
-  out.push(L(k.ring(p.x, POT_Y, POT_R - 1.2, RIM_Z, P, 48), { tone: "faint" }));
-  // handle
-  const h = { x: p.side > 0 ? p.x + POT_R - 3 : p.x - POT_R - 22, y: POT_Y - 3.2, w: 25, d: 6.4, r: 2.2 };
-  out.push(S(k.slabOf(h, RIM_Z - 14, 3.4, P, 4, 0.4), { tone: "mid" }));
-  out.push(D([at([p.side > 0 ? h.x + h.w - 3 : h.x + 3, POT_Y, RIM_Z - 10.6])], { size: 0.45 }));
   return out.join("");
 }
 
@@ -182,105 +173,135 @@ const rigSource = () => readFileSync(join(HERE, "rig.mjs"), "utf8").replace(/^ex
 
 const live = `
 const P = ${JSON.stringify(P)};
-const GAUGES = ${JSON.stringify(GAUGES)};
-const POTS = ${JSON.stringify(POTS)};
-const BUBBLES = ${JSON.stringify(BUBBLES)};
-const POT_R = ${POT_R}, POT_Y = ${POT_Y}, Z0 = ${Z0}, SPAN = ${SPAN}, RIM_Z = ${RIM_Z}, LIQ_R = ${LIQ_R}, PAD_H = ${PAD_H}, LEVEL_MAX = ${LEVEL_MAX};
-const GAUGE_R = ${GAUGE_R}, GAUGE_TOP = ${GAUGE_TOP}, GAUGE_FROM = ${GAUGE_FROM}, GAUGE_SPAN = ${GAUGE_SPAN};
-const AZ = P.azimuth * Math.PI / 180;
+const TANKS = ${JSON.stringify(TANKS)};
+const THERMO = ${JSON.stringify(THERMO)};
+const FOAM = ${JSON.stringify(FOAM)};
+const TW = ${TW}, YF = ${YF}, YB = ${YB}, WALL = ${WALL}, BASE_H = ${BASE_H}, Z0 = ${Z0}, SPAN = ${SPAN}, RIM_Z = ${RIM_Z}, IX = ${IX}, IY0 = ${IY0}, IY1 = ${IY1};
+const THERMO_Y = ${THERMO_Y}, THERMO_FULL = ${THERMO_FULL}, KNOB_Y = ${KNOB_Y}, KNOB_X0 = ${KNOB_X0}, KNOB_SPAN = ${KNOB_SPAN};
 const stage = document.querySelector(".iso-stage");
 const svg = stage.querySelector("svg");
 const readout = document.querySelector("[data-readout]");
 const $ = (name) => svg.querySelector('[data-part="' + name + '"]');
-const needles = GAUGES.map((g) => $("needle-" + g.key));
 const still = matchMedia("(prefers-reduced-motion: reduce)");
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const levelZ = (level) => Z0 + Math.min(level, 1.25) * SPAN;
-const needleAt = (g, value) => {
-  const v = g.key === "heat" ? value : value / LEVEL_MAX;
-  const angle = GAUGE_FROM + GAUGE_SPAN * clamp(v, 0, 1), sx = Math.sin(angle), sy = -Math.cos(angle);
-  return lineOnTop([g.at[0] - sx * 3.4, g.at[1] - sy * 3.4], [g.at[0] + sx * (GAUGE_R - 4), g.at[1] + sy * (GAUGE_R - 4)], GAUGE_TOP + 0.2, P);
-};
+const levelZ = (level) => (level <= 1 ? Z0 + level * SPAN : RIM_Z + Math.min(24, (level - 1) * SPAN * 2.4));
+const rnd = (a, b) => a + Math.random() * (b - a);
 
 const start = ${JSON.stringify(startState)};
 const pots = { water: Object.assign(newPot(), start.water), milk: Object.assign(newPot(), start.milk) };
-let heat = start.heat, target = heat, clock = ${START_CLOCK}, ripple = 0, time = 0;
+const fx = { water: { bubbles: [], pops: [], steam: [], spawn: 0 }, milk: { bubbles: [], pops: [], steam: [], spawn: 0 } };
+let heat = start.heat, target = heat, clock = ${START_CLOCK}, stirT = 0, time = 0;
 let frame = 0, last = 0, visible = false, touring = !still.matches, idleTimer = 0;
-const parts = {};
-for (const p of POTS) parts[p.key] = { liquid: $("liquid-" + p.key), drips: $("drips-" + p.key), puddle: $("puddle-" + p.key), pad: $("pad-" + p.key).querySelector(".iso-solid") };
+const el = {};
+for (const t of TANKS) el[t.key] = { dyn: $("dyn-" + t.key), over: $("over-" + t.key), fill: $("fill-" + t.key), lamps: [...svg.querySelectorAll('[data-lamp^="' + t.key + '-"]')].map((g) => g.querySelector(".iso-solid")) };
+const knob = $("knob");
+const notes = { water: $("note-water"), milk: $("note-milk") };
 
-function liquid(p, pot) {
-  const milk = p.key === "milk";
-  const level = levelOf(pot);
-  const top = levelZ(level);
-  const over = Math.max(0, level - 1);
-  let out = solidSvg(cylinder(p.x, POT_Y, LIQ_R, Z0, Math.max(1, top - Z0), P, 40, 0.4), { tone: milk ? "hi" : "mid", lit: milk, crease: "lo" });
-  // bubbles on the surface: popping fast in water, standing in milk
-  const boiling = pot.T >= RIG.T_BOIL - 0.5 ? vaporOf(heat) : 0;
-  const n = milk ? Math.round(16 * clamp(pot.foam * 3.2, 0, 1)) : boiling > 0 ? Math.ceil(boiling * 14) + 2 : pot.T > 85 ? Math.round(((pot.T - 85) / 15) * 3) : 0;
-  const rings = [];
-  for (let i = 0; i < n; i++) {
-    const [bx, by] = BUBBLES[i];
-    if (milk) {
-      const size = 1.8 + 2 * clamp(pot.foam / 0.45, 0, 1) + 0.25 * Math.sin(time * 2.6 + i * 1.7);
-      rings.push([ring(p.x + bx, POT_Y + by, size, top + 0.3, P, 14), 1]);
-    } else {
-      const f = (time * 1.15 + i * 0.37) % 1;
-      rings.push([ring(p.x + bx, POT_Y + by, 0.5 + 2.6 * f, top + 0.3, P, 12), 1 - f * f * f]);
-    }
+// the bubbles the burner makes at the floor: each rises, then pops in water, or is stopped by the skin in milk
+function bubbles(t, pot, dt) {
+  const f = fx[t.key], milk = t.key === "milk";
+  const surface = Z0 + pot.vol * SPAN;
+  const boil = pot.T >= RIM_T() ? 0.35 + 0.65 * vaporOf(heat) : smooth(65, 100, pot.T) * 0.3;
+  f.spawn += boil * 22 * dt;
+  while (f.spawn >= 1 && f.bubbles.length < 70) { f.spawn -= 1; f.bubbles.push({ x: rnd(-IX / 2 + 4, IX / 2 - 4), z: Z0 + 1.5, r0: rnd(0.9, 1.9), vz: rnd(20, 32), ph: rnd(0, 6), held: 0 }); }
+  f.spawn = Math.min(f.spawn, 1);
+  const kept = [];
+  for (const b of f.bubbles) {
+    if (b.held) { b.held += dt; if (b.held < 0.4) kept.push(b); continue; }
+    b.z += b.vz * dt; b.x += Math.sin(time * 4 + b.ph) * 3 * dt;
+    const r = b.r0 * (1 + ((b.z - Z0) / SPAN) * 0.8);
+    if (b.z + r >= surface) {
+      if (milk && pot.skin > 0.35) { b.held = 0.001; b.z = surface - r; kept.push(b); }
+      else { f.pops.push({ x: b.x, z: surface, t: 0 }); for (let i = 0; i < 2; i++) f.steam.push({ x: b.x + rnd(-3, 3), z: surface + 2, t: 0, vz: rnd(14, 24) }); }
+    } else kept.push(b);
   }
-  out += fadedSvg(rings, { tone: milk ? "lo" : "mid", free: true });
-  if (milk) {
-    // the skin: a film with an edge and wrinkles, fading in as it forms
-    if (pot.skin > 0.03) {
-      const wr = [[-14, -6, 8, 12], [-8, 8, 16, 2], [-18, 12, 4, 20]].map(([x0, y0, x1, y1]) => lineOnTop([p.x + x0 * 0.9, POT_Y + y0 * 0.9], [p.x + x1 * 0.9, POT_Y + y1 * 0.9], top + 0.4, P)).join("");
-      out += '<g opacity="' + clamp(pot.skin * 1.2, 0, 1).toFixed(2) + '">' + lineSvg(ring(p.x, POT_Y, LIQ_R - 2.2, top + 0.4, P, 48), { tone: "mid" }) + lineSvg(wr, { tone: "lo", free: true }) + '</g>';
-    }
-    // foam piled over the rim
-    if (level > 0.9) {
-      const lumps = [];
-      for (let j = 0; j < 7; j++) {
-        const a = j * 0.9 + 0.35, h = 1 + (level - 0.9) * SPAN * 2.2 * (0.55 + 0.4 * Math.sin(j * 2.1 + time * 1.8));
-        lumps.push([p.x + (LIQ_R - 6) * Math.cos(a), POT_Y + (LIQ_R - 6) * Math.sin(a), h]);
-      }
-      lumps.sort((a, b) => depthOf([a[0], a[1], 0], P) - depthOf([b[0], b[1], 0], P));
-      for (const [lx, ly, h] of lumps) out += solidSvg(cylinder(lx, ly, 3.2, top, h, P, 16, 1.3), { tone: "hi", lit: true, crease: "none" });
-    }
-    if (ripple > 0) out += lineSvg(ring(p.x, POT_Y, 2 + (1 - ripple / 0.7) * (LIQ_R - 4), top + 0.5, P, 40), { tone: "lit", free: true });
-  }
-  return out;
+  f.bubbles = kept;
+  f.pops = f.pops.filter((p) => (p.t += dt) < 0.3);
+  f.steam = f.steam.filter((s) => { s.t += dt; s.z += s.vz * dt; return s.t < 1.2 && f.steam.length < 60; });
 }
-function drips(p, pot) {
-  const level = levelOf(pot), spill = clamp(pot.spilled / 0.9, 0, 1), over = Math.max(0, level - 1);
-  if (spill < 0.01 && over < 0.005) return "";
+function RIM_T() { return RIG.T_BOIL - 0.5; }
+
+const faceY = IY1;
+const ringAt = (x, y, z, r) => sideRing([x, y, z], r, "y", P, 14);
+function tank(t, pot, hn) {
+  const milk = t.key === "milk", f = fx[t.key];
+  const x0 = t.x - IX / 2, level = levelOf(pot), top = levelZ(level), surface = Z0 + pot.vol * SPAN;
+  const over = Math.max(0, level - 1), capB = Math.min(4, over * 28), capTop = top > RIM_Z + 0.5;
   let out = "";
-  for (let j = 0; j < 5; j++) {
-    const a = AZ + (j - 2) * 0.5 + 0.08 * Math.sin(j * 5.3);
-    const d = Math.min(28, 2 + spill * 30 * (0.55 + 0.45 * Math.sin(j * 1.7 + 1)) + over * 80);
-    const dx = p.x + (POT_R + 0.6) * Math.cos(a), dy = POT_Y + (POT_R + 0.6) * Math.sin(a);
-    out += solidSvg(cylinder(dx, dy, 1.5, RIM_Z - d, d + 1.4, P, 14, 0.5), { tone: "hi", lit: true, crease: "none" });
-    out += solidSvg(cylinder(dx, dy, 2.4, RIM_Z - d - 1.2, 2.6, P, 14, 1), { tone: "hi", lit: true, crease: "none" });
+  // liquid
+  out += solidSvg(slabOf({ x: x0, y: IY0, w: IX, d: IY1 - IY0, r: 0.4 }, Z0, Math.max(1, Math.min(surface, RIM_Z) - Z0), P, 2, 0.3), { tone: milk ? "hi" : "mid", lit: milk, crease: "lo" });
+  // bubbles rising from the heated floor
+  const rings = [];
+  for (const b of f.bubbles) {
+    const r = b.r0 * (1 + ((b.z - Z0) / SPAN) * 0.8);
+    rings.push([ringAt(t.x + b.x, faceY, b.z, r), b.held ? 1 - b.held / 0.4 : 1]);
+  }
+  for (const p of f.pops) rings.push([ringAt(t.x + p.x, faceY, p.z, 1.2 + (p.t / 0.3) * 6), 1 - p.t / 0.3]);
+  out += fadedSvg(rings, { tone: milk ? "mid" : "hi", free: true });
+  if (milk && level > pot.vol + 0.01) {
+    // foam: packed bubbles between the liquid and the skin
+    const foamTop = top, cut = Math.min(foamTop, RIM_Z);
+    out += solidSvg(slabOf({ x: x0, y: IY0, w: IX, d: IY1 - IY0, r: 0.4 }, Math.min(surface, RIM_Z), Math.max(0.6, cut - Math.min(surface, RIM_Z)), P, 2, 0.3), { tone: "hi", lit: true, crease: "none" });
+    if (capTop) out += solidSvg(slabOf({ x: x0 - capB, y: IY0 - capB, w: IX + capB * 2, d: IY1 - IY0 + capB * 2, r: 3 }, RIM_Z, top - RIM_Z, P, 6, 0.8), { tone: "hi", lit: true, crease: "lo" });
+    const foam = [];
+    const fh = top - surface;
+    for (const [fxp, fz, fr] of FOAM) {
+      const z = surface + fz;
+      if (z + fr > top - 0.8) continue;
+      const above = z - fr > RIM_Z - 0.5;
+      foam.push([ringAt(t.x + fxp * (above ? 1 + capB / 40 : 1), above ? IY1 + capB : faceY, z, fr), 1]);
+    }
+    out += fadedSvg(foam, { tone: "mid", free: true });
+  }
+  if (milk && pot.skin > 0.03) {
+    // the skin: a film over the top, thicker as it sets
+    const plan = capTop ? { x: x0 - capB, y: IY0 - capB, w: IX + capB * 2, d: IY1 - IY0 + capB * 2, r: 3 } : { x: x0 - 0.3, y: IY0 - 0.3, w: IX + 0.6, d: IY1 - IY0 + 0.6, r: 0.6 };
+    out += solidSvg(slabOf(plan, top, 0.5 + 1.5 * pot.skin, P, 6, 0.3), { tone: "hi", crease: "none" });
   }
   return out;
 }
-function puddle(p, pot) {
-  const spill = clamp(pot.spilled / 0.9, 0, 1);
-  if (spill < 0.01) return "";
-  return solidSvg(cylinder(p.x, POT_Y, POT_R + 2 + spill * 9, PAD_H - 0.4, 0.8, P, 48, 0.2), { tone: "mid", crease: "none" });
+function above(t, pot) {
+  const milk = t.key === "milk", f = fx[t.key];
+  const level = levelOf(pot), top = levelZ(level), x0 = t.x - IX / 2;
+  let out = "";
+  // steam escaping out of the open top (it is trapped under a skin)
+  out += dotsSvg(f.steam.map((s) => { const [px, py] = iso([t.x + s.x, (IY0 + IY1) / 2, s.z], P); return [px, py, 0.9 * (1 - s.t / 1.2)]; }), { size: 0.9, tone: "hi" });
+  // drips and puddle once foam has gone over
+  const spill = clamp(pot.spilled / 0.9, 0, 1), over = Math.max(0, level - 1);
+  if (milk && (spill > 0.01 || over > 0.005)) {
+    const puddle = 0.1 + spill;
+    out += solidSvg(slabOf({ x: t.x - 10 - puddle * 17, y: YF + 11, w: 20 + puddle * 34, d: 3.5 + puddle * 6, r: 1.8 + puddle }, 0, 0.7, P, 8, 0.2), { tone: "mid", crease: "none" });
+    const wet = clamp((level - 0.92) / 0.08, 0, 1);
+    if (wet > 0.02) out += '<g opacity="' + wet.toFixed(2) + '">';
+    [-31, -20, -8, 4, 16, 28].forEach((dx, j) => {
+      const d = Math.min(18, 2 + spill * 14 * (0.35 + 0.65 * Math.abs(Math.sin(j * 2.3 + 1))) + over * 14);
+      if (wet > 0.02) out += solidSvg(slabOf({ x: t.x + dx - 3.2, y: YF + 0.3, w: 6.4, d: 2.2, r: 3.1 }, RIM_Z - d, d + 1, P, 8, 0.4), { tone: "hi", lit: true, crease: "none" });
+    });
+    if (wet > 0.02) out += "</g>";
+  }
+  // the spoon
+  if (milk && stirT > 0) {
+    const sx = t.x + Math.sin((1 - stirT / 0.8) * 14) * 24, zt = RIM_Z + 34;
+    out += solidSvg(slabOf({ x: sx - 1.3, y: (IY0 + IY1) / 2 - 1.3, w: 2.6, d: 2.6, r: 1.2 }, top, zt - top, P, 6, 0.3), { tone: "hi", lit: true, crease: "none" });
+  }
+  return out;
 }
 
 function draw() {
-  for (const p of POTS) {
-    const pot = pots[p.key], part = parts[p.key];
-    part.liquid.innerHTML = liquid(p, pot);
-    part.drips.innerHTML = drips(p, pot);
-    part.puddle.innerHTML = puddle(p, pot);
-    if (heat > 0.08) part.pad.setAttribute("data-lit", ""); else part.pad.removeAttribute("data-lit");
+  for (const t of TANKS) {
+    const pot = pots[t.key], e = el[t.key];
+    e.dyn.innerHTML = tank(t, pot);
+    e.over.innerHTML = above(t, pot);
+    const h = clamp((pot.T - 20) / 80, 0, 1) * THERMO_FULL;
+    e.fill.innerHTML = solidSvg(slabOf({ x: THERMO[t.key] - 1.1, y: THERMO_Y - 1.1, w: 2.2, d: 2.2, r: 1.1 }, 8, Math.max(0.5, h), P, 6), { tone: "hi", lit: true, crease: "none" });
+    const n = Math.round(heat * 6);
+    e.lamps.forEach((s, i) => (i < n ? s.setAttribute("data-lit", "") : s.removeAttribute("data-lit")));
   }
-  const shown = { heat, water: levelOf(pots.water), milk: levelOf(pots.milk) };
-  GAUGES.forEach((g, i) => needles[i].setAttribute("d", needleAt(g, shown[g.key])));
-  const m = pots.milk, lvl = levelOf(m);
-  const text = "heat " + Math.round(heat * 100) + "% \\u00b7 milk " + Math.round(m.T) + "\\u00b0C \\u00b7 level " + lvl.toFixed(2) + "\\u00d7" + (m.spilled > 0.02 && lvl > 0.99 ? " \\u00b7 boiling over" : m.skin > 0.5 ? " \\u00b7 skin" : "");
+  notes.water.setAttribute("opacity", pots.water.T > 96 && heat > 0.4 ? "1" : "0");
+  notes.milk.setAttribute("opacity", pots.milk.T > 96 && heat > 0.4 && pots.milk.skin > 0.5 ? "1" : "0");
+  knob.setAttribute("transform", translateAlong(P, [KNOB_X0 + KNOB_SPAN * heat, 0, 0]));
+  const m = pots.milk, lvl = levelOf(m), w = pots.water;
+  const text = "heat " + Math.round(heat * 100) + "% \\u00b7 " + Math.round(Math.max(w.T, m.T)) + "\\u00b0C \\u00b7 milk " + lvl.toFixed(2) + "\\u00d7 rim";
   if (readout.textContent !== text) readout.textContent = text;
 }
 function tick(now) {
@@ -294,7 +315,8 @@ function tick(now) {
     step(pots.water, heat, h, "water");
     step(pots.milk, heat, h, "milk");
   }
-  ripple = Math.max(0, ripple - dt);
+  for (const t of TANKS) bubbles(t, pots[t.key], dt);
+  stirT = Math.max(0, stirT - dt);
   draw();
   stage.setAttribute("aria-valuenow", String(Math.round(heat * 100)));
   frame = visible ? requestAnimationFrame(tick) : 0;
@@ -302,7 +324,7 @@ function tick(now) {
 const run = () => { if (!frame && visible) { last = 0; frame = requestAnimationFrame(tick); } };
 const resume = () => { idleTimer = setTimeout(() => { if (!still.matches) { touring = true; clock = target > 0.5 ? 12 : pots.milk.T > 60 ? 31 : 0; run(); } }, 4200); };
 const steer = (next) => { touring = false; target = clamp(next, 0, 1); clearTimeout(idleTimer); resume(); run(); };
-const stirMilk = () => { stir(pots.milk); ripple = 0.7; clearTimeout(idleTimer); resume(); run(); };
+const stirMilk = () => { stir(pots.milk); stirT = 0.8; clearTimeout(idleTimer); resume(); run(); };
 new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
 stage.addEventListener("pointermove", (event) => {
   const box = svg.getBoundingClientRect();
@@ -320,34 +342,48 @@ stage.addEventListener("keydown", (event) => {
   event.preventDefault();
   steer(next);
 });
+for (let i = 0; i < 150; i++) { time += 1 / 60; for (const t of TANKS) bubbles(t, pots[t.key], 1 / 60); }
 draw();
 `;
+
+const tankGroup = (t) =>
+  [
+    tankBack(t),
+    `<g data-part="dyn-${t.key}"></g>`,
+    tankFront(t),
+    `<g data-part="over-${t.key}"></g>`,
+  ].join("");
 
 const svg = k.figureSvg({
   width: WIDTH,
   height: HEIGHT,
   label:
-    "Two glass pots on one electric burner, water on the left and milk on the right. At a rolling boil the water bubbles pop straight away and its level barely moves. The milk grows a skin that traps the steam, so foam builds up, climbs over the rim and runs down the side. Gauges show the heat and the level in each pot against the rim.",
+    "Two glass-fronted tanks on one burner, water on the left and milk on the right, with a thermometer by each and a heat knob on a rail at the front. At a rolling boil both read 100 degrees. In the water, bubbles rise from the heated floor and pop at the surface, letting the steam escape, so the level stays put. In the milk a skin forms on top and stops the bubbles, so foam piles up under it, passes the dashed rim line and runs down the outside.",
   body: [
     plate(),
-    ...byDepth(POTS.map((p) => [p.x, POT_Y, p])).map(([, , p]) =>
-      [burner(p), potBack(p), `<g data-part="liquid-${p.key}"></g>`, potFront(p), `<g data-part="drips-${p.key}"></g>`].join(""),
-    ),
-    ...GAUGES.map((g) => gauge(g) + `<path data-part="needle-${g.key}" class="iso-line" data-tone="lit" data-free="both" d="${needleAt(g, startState[g.key] === undefined ? 0 : g.key === "heat" ? startState.heat : R.levelOf(startState[g.key]))}" style="stroke-width:1.1"/>`),
+    tankGroup(TANKS[0]),
+    thermometer("water"),
+    `<g data-part="fill-water"></g>`,
+    thermometer("milk"),
+    `<g data-part="fill-milk"></g>`,
+    tankGroup(TANKS[1]),
+    control(),
+    `<g data-part="knob" transform="${k.translateAlong(P, [knobX(startState.heat) - 0, 0, 0])}">${knob()}</g>`,
   ],
 });
 
 const body = k.plateHtml({
   fig: "Fig 6",
   title: "Chai boilover",
-  hint: "Move across for heat · click to stir",
-  readout: `heat ${Math.round(startState.heat * 100)}% · milk ${Math.round(startState.milk.T)}°C · level ${R.levelOf(startState.milk).toFixed(2)}×`,
+  hint: "Move for heat · click to stir",
+  readout: `heat ${Math.round(startState.heat * 100)}% · ${Math.round(Math.max(startState.water.T, startState.milk.T))}°C · milk ${R.levelOf(startState.milk).toFixed(2)}× rim`,
   keys: [
-    { mark: "lit", label: "Milk, foam and gauge needles" },
-    { mark: "raised", label: "Glass pots, burners and plate" },
+    { mark: "lit", label: "Milk, its foam and the thermometers" },
+    { mark: "raised", label: "Water, glass and burner" },
+    { mark: "red", label: "Rim line and the heat that boils milk over" },
   ],
   caption:
-    "Same burner, same heat, two pots. In water, steam bubbles reach the surface and pop, so the level barely moves. In milk, proteins steady the bubbles and, as it warms, a skin of set protein forms on top. The skin traps the steam, so foam builds faster than it bursts and climbs over the rim. Turn the heat down to a simmer, or click to stir and break the skin, and it settles.",
+    "Same burner, same heat, and both read 100 degrees. In water, steam bubbles rise and pop at the surface, so the steam escapes and the level stays put. Milk grows a skin of set protein, and it stops the bubbles. The steam piles up under it as foam, faster than it can burst, and pushes over the rim. Turn it down to a simmer, or click to stir and break the skin, and it settles.",
   body: `<div class="iso-stage" tabindex="0" role="slider" aria-label="Chai boilover: arrow keys change the burner heat, Enter stirs the milk" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(startState.heat * 100)}">${svg}</div>`,
 });
 

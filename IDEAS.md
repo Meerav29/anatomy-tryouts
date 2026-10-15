@@ -19,7 +19,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 - [ ] **carb-ice** — venturi on a stand with a temperature dial showing the drop that can ice it up.
 
 ## Coffee and chai
-- [x] **chai-boilover** — two glass pots on one burner, water vs milk. Water's bubbles pop; milk grows a skin that traps steam, foam climbs over the rim and drips down. Heat by pointer, click to stir (breaks the skin). Boils over above ~half heat; a simmer is safe.
+- [x] **chai-boilover** — two glass-fronted tanks on one burner, water vs milk, a thermometer by each (both read 100 C). Bubbles rise from the floor: in water they pop and the steam escapes; in milk a skin stops them, foam stacks under it, passes the red rim line and runs down the glass. Heat knob on a rail follows the pointer; click stirs (spoon, breaks the skin). Boils over above ~half heat.
 
 ## AI and classifiers
 - [x] **threshold-sieve** — 112 beads on a score ruler, a hovering sieve blade on rails; beads right of it lift on pins; two dial gauges read precision and recall.
