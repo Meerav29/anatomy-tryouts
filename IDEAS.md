@@ -8,7 +8,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 ## F1 and racing
 - [x] **tyre-window** — reciprocating friction tester: rubber block on a heated platen, spring-measured grip, a 30-slat comb of grip vs temperature with a probe. Window ~80-102 C; hot = blisters, wear x18, crumbs.
 - [ ] **drs-slot-gap** — two flaps on a rail, a pin that opens the gap, a comb of smoke lines that stalls when it opens.
-- [ ] **undercut** — two cars on a conveyor, a pit-lane switch. Fresh-tyre gain per lap vs a fixed stop cost, so the crossover lap falls out of the numbers.
+- [x] **undercut** — oval circuit with a pit lane; car B (7 s behind) pits on the lap you pick, A answers a lap later. A band along the track shows the gap; a comb of slats shows how far ahead B ends up for every pit lap, with a break-even line. Crossover lap 11 falls out of tyre age vs a 22 s stop.
 
 ## Go-karting and simulators
 - [ ] **ackermann** — four-bar steering linkage on a plate; the inside wheel turns more than the outside.
