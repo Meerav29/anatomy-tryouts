@@ -876,7 +876,7 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 
 const start = {"heat":0.9,"water":{"T":100,"skin":0,"foam":0.06888888865277626,"vol":0.62,"spilled":0},"milk":{"T":100,"skin":0.8364661859713445,"foam":0.522104426156154,"vol":0.5727277406334745,"spilled":0.13506359819007266}};
 const pots = { water: Object.assign(newPot(), start.water), milk: Object.assign(newPot(), start.milk) };
-const fx = { water: { bubbles: [], pops: [], steam: [], spawn: 0 }, milk: { bubbles: [], pops: [], steam: [], spawn: 0 } };
+const fx = { water: { bubbles: [], pops: [], steam: [], spawn: 0 }, milk: { bubbles: [], pops: [], steam: [], spawn: 0, drops: [] } };
 let heat = start.heat, target = heat, clock = 16, stirT = 0, time = 0;
 let frame = 0, last = 0, visible = false, touring = !still.matches, idleTimer = 0;
 const el = {};
@@ -947,24 +947,61 @@ function tank(t, pot, hn) {
   }
   return out;
 }
+// the tongues of milk hanging off the rim: where they are and how long
+function tongues(pot, level) {
+  const spill = clamp(pot.spilled / 0.9, 0, 1), over = Math.max(0, level - 1);
+  const list = [-29, -17, -6, 7, 19, 30].map((c, j) => ({ c, s: 3 + 0.9 * Math.abs(Math.sin(j * 1.9)), len: Math.min(24, 1.5 + spill * 22 * (0.3 + 0.7 * Math.abs(Math.sin(j * 2.3 + 1))) + over * 20 + (spill > 0.05 ? 0.7 * Math.sin(time * 1.3 + j * 2) : 0)) }));
+  return { list, base: 1.2 + spill * 1.6 + over * 5 };
+}
+function runoff(pot, dt) {
+  const f = fx.milk, level = levelOf(pot), spill = clamp(pot.spilled / 0.9, 0, 1);
+  if (level > 0.99 && spill > 0.08 && f.drops.length < 6 && Math.random() < dt * (1 + spill * 2)) {
+    const g = tongues(pot, level), tg = g.list[Math.floor(Math.random() * g.list.length)];
+    if (tg.len > 9) f.drops.push({ x: tg.c, z: RIM_Z - g.base - tg.len, vz: 0 });
+  }
+  f.drops = f.drops.filter((d) => { d.vz += 110 * dt; d.z -= d.vz * dt; return d.z > BASE_H + 0.5; });
+}
 function above(t, pot) {
   const milk = t.key === "milk", f = fx[t.key];
   const level = levelOf(pot), top = levelZ(level), x0 = t.x - IX / 2;
   let out = "";
   // steam escaping out of the open top (it is trapped under a skin)
   out += dotsSvg(f.steam.map((s) => { const [px, py] = iso([t.x + s.x, (IY0 + IY1) / 2, s.z], P); return [px, py, 0.9 * (1 - s.t / 1.2)]; }), { size: 0.9, tone: "hi" });
-  // drips and puddle once foam has gone over
-  const spill = clamp(pot.spilled / 0.9, 0, 1), over = Math.max(0, level - 1);
-  if (milk && (spill > 0.01 || over > 0.005)) {
-    const puddle = 0.1 + spill;
-    out += solidSvg(slabOf({ x: t.x - 10 - puddle * 17, y: YF + 11, w: 20 + puddle * 34, d: 3.5 + puddle * 6, r: 1.8 + puddle }, 0, 0.7, P, 8, 0.2), { tone: "mid", crease: "none" });
-    const wet = clamp((level - 0.92) / 0.08, 0, 1);
-    if (wet > 0.02) out += '<g opacity="' + wet.toFixed(2) + '">';
-    [-31, -20, -8, 4, 16, 28].forEach((dx, j) => {
-      const d = Math.min(18, 2 + spill * 14 * (0.35 + 0.65 * Math.abs(Math.sin(j * 2.3 + 1))) + over * 14);
-      if (wet > 0.02) out += solidSvg(slabOf({ x: t.x + dx - 3.2, y: YF + 0.3, w: 6.4, d: 2.2, r: 3.1 }, RIM_Z - d, d + 1, P, 8, 0.4), { tone: "hi", lit: true, crease: "none" });
-    });
-    if (wet > 0.02) out += "</g>";
+  // milk running down the glass, drops off the tips, and the puddle on the plate
+  if (milk) {
+    const spill = clamp(pot.spilled / 0.9, 0, 1), wet = clamp((level - 0.92) / 0.08, 0, 1);
+    const tg = tongues(pot, level);
+    if (wet > 0.02) {
+      const xs = [];
+      for (let x = -IX / 2 + 1; x <= IX / 2 - 1 + 1e-6; x += 1.4) xs.push(x);
+      const bottom = xs.map((x) => [t.x + x, YF + 0.3, RIM_Z - tg.base - tg.list.reduce((a, g) => a + g.len * Math.exp(-Math.pow((x - g.c) / g.s, 2)), 0)]);
+      const topEdge = [[t.x + IX / 2 - 1, YF + 0.3, RIM_Z + 1.2], [t.x - IX / 2 + 1, YF + 0.3, RIM_Z + 1.2]];
+      const outline = pathOf([...bottom, ...topEdge].map((p) => iso(p, P)), true);
+      const inner = pathOf(bottom.map(([x, y, z]) => iso([x, y, z + 1.1], P)));
+      out += '<g opacity="' + wet.toFixed(2) + '"><g class="iso-solid" data-lit=""><path class="iso-fill" d="' + outline + '"/><path class="iso-line iso-edge" data-tone="hi" d="' + outline + '"/></g>' + lineSvg(inner, { tone: "mid", free: true }) + '</g>';
+      out += dotsSvg(fx.milk.drops.map((d) => iso([t.x + d.x, YF + 0.6, d.z], P)), { size: 1.25, tone: "hi" });
+    }
+    if (spill > 0.03) {
+      // milk collects at the foot of the glass, finds the one gap between label and lamps, and runs off the base
+      const px = t.x - 12, pr = 6 + spill * 24;
+      const pool = Array.from({ length: 36 }, (_, i) => { const a = (i / 36) * Math.PI * 2; return iso([t.x - 4 + Math.cos(a) * pr * (1 + 0.06 * Math.sin(4 * a)), YF + 1.9 + Math.sin(a) * (0.9 + spill * 0.8), BASE_H + 0.2], P); });
+      const pd = pathOf(pool, true);
+      out += '<g class="iso-solid" data-lit=""><path class="iso-fill" d="' + pd + '"/><path class="iso-line iso-edge" data-tone="hi" d="' + pd + '"/></g>';
+      if (spill > 0.1) {
+        const face = YF + 9.1, w = 1.2 + spill * 0.5;
+        const run = pathOf([[px - w, YF + 2.5, BASE_H + 0.2], [px + w, YF + 2.5, BASE_H + 0.2], [px + w, face, BASE_H + 0.2], [px + w * 0.8, face, 0.4], [px - w * 0.8, face, 0.4], [px - w, face, BASE_H + 0.2]].map((p) => iso(p, P)), true);
+        out += '<g class="iso-solid" data-lit=""><path class="iso-fill" d="' + run + '"/><path class="iso-line iso-edge" data-tone="hi" d="' + run + '"/></g>';
+      }
+      const rx = 8 + spill * 17, ry = 3.4 + spill * 6, cy = YF + 9.6 + ry * 1.3;
+      const blob = Array.from({ length: 48 }, (_, i) => {
+        const a = (i / 48) * Math.PI * 2, r = 1 + 0.1 * Math.sin(3 * a + 1) + 0.07 * Math.sin(5 * a + 2) + 0.05 * Math.sin(2 * a);
+        return iso([px + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r, 0.4], P);
+      });
+      const bd = pathOf(blob, true);
+      out += '<g class="iso-solid" data-lit=""><path class="iso-fill" d="' + bd + '"/><path class="iso-line iso-edge" data-tone="hi" d="' + bd + '"/></g>';
+      const gloss = Array.from({ length: 10 }, (_, i) => { const a = 3.6 + (i / 9) * 1.5; return iso([px + Math.cos(a) * rx * 0.6, cy + Math.sin(a) * ry * 0.55, 0.4], P); });
+      out += lineSvg(pathOf(gloss), { tone: "mid", free: true });
+    }
   }
   // the spoon
   if (milk && stirT > 0) {
@@ -1003,6 +1040,7 @@ function tick(now) {
     step(pots.milk, heat, h, "milk");
   }
   for (const t of TANKS) bubbles(t, pots[t.key], dt);
+  runoff(pots.milk, dt);
   stirT = Math.max(0, stirT - dt);
   draw();
   stage.setAttribute("aria-valuenow", String(Math.round(heat * 100)));
