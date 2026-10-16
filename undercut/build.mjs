@@ -186,14 +186,37 @@ const needleAt = (g, age) => {
   return lineOnTop([g.at[0] - sx * 2.6, g.at[1] - sy * 2.6], [g.at[0] + sx * (GAUGE_R - 3.4), g.at[1] + sy * (GAUGE_R - 3.4)], GAUGE_TOP + 0.2, P);
 };
 const rot = (cx, cy, a, pts) => pts.map(([lx, ly]) => [cx + lx * Math.cos(a) - ly * Math.sin(a), cy + lx * Math.sin(a) + ly * Math.cos(a)]);
-function car(pose, lit, stopped) {
+function car(pose, cls, stopped) {
   const { x, y, a } = pose;
+  const z = TRACK_H;
+  const parts = [];
+  const SC = 1.2;
+  const add = (pts, z0, h, c, bevel = 0.25) => {
+    pts = pts.map(([px, py]) => [px * SC, py * SC]);
+    z0 = TRACK_H + (z0 - TRACK_H) * 1.15; h *= 1.15;
+    const ctr = pts.reduce((m, [px, py]) => [m[0] + px / pts.length, m[1] + py / pts.length], [0, 0]);
+    const [wx, wy] = rot(x, y, a, [ctr])[0];
+    parts.push([depthOf([wx, wy, z0], P), solidSvg(extrude(rot(x, y, a, pts), z0, h, P, { convex: true, bevel }), { tone: "hi", crease: "lo", className: c })]);
+  };
+  const box = (cx, cy, l, w) => [[cx + l / 2, cy + w / 2], [cx + l / 2, cy - w / 2], [cx - l / 2, cy - w / 2], [cx - l / 2, cy + w / 2]];
+  // open wheels, the front pair narrower than the rear
+  for (const [wx, wy, l, w] of [[7.4, 4.5, 3.4, 2], [7.4, -4.5, 3.4, 2], [-6.6, 4.8, 4.2, 2.6], [-6.6, -4.8, 4.2, 2.6]]) add(box(wx, wy, l, w), z, 2.7, "car-tyre", 0.5);
+  // floor and tub, with the nose running out to a front wing
+  add([[12, 0.8], [12, -0.8], [6, -1.9], [-3, -2.5], [-9, -2.2], [-9, 2.2], [-3, 2.5], [6, 1.9]], z + 0.7, 1.9, cls);
+  add(box(10.7, 0, 1.7, 11), z + 0.5, 0.8, cls, 0.2);
+  add(box(-2.6, 3.7, 7.5, 2), z + 0.8, 2.2, cls);
+  add(box(-2.6, -3.7, 7.5, 2), z + 0.8, 2.2, cls);
+  // cockpit, airbox and the driver's helmet
+  add([[3, 0.9], [3, -0.9], [-2.4, -1.2], [-2.4, 1.2]], z + 2.6, 1.1, cls + " car-dark");
+  add(box(-3.8, 0, 2.6, 1.8), z + 2.6, 2, cls + " car-dark");
+  add(box(0.4, 0, 1.8, 1.8), z + 2.9, 1.2, "car-helmet", 0.5);
+  // rear wing on its pillar
+  add(box(-9.6, 0, 1.6, 10), z + 3.9, 1, cls, 0.2);
+  add(box(-9.6, 0, 1.2, 1.2), z + 2.2, 1.7, "car-dark " + cls, 0.1);
+  parts.sort((p, q) => p[0] - q[0]);
   let out = "";
-  if (stopped) out += lineSvg(ring(x, y, 14, TRACK_H + 0.1, P, 28), { tone: "lit", dashed: true, free: true });
-  out += solidSvg(extrude(rot(x, y, a, [[11, 2], [11, -2], [5, -5.2], [-9.6, -5.2], [-11, -3.4], [-11, 3.4], [-9.6, 5.2], [5, 5.2]]), TRACK_H + 0.4, 2.8, P, { convex: true, bevel: 0.5 }), { tone: lit ? "hi" : "hi", lit, crease: "lo" });
-  out += solidSvg(extrude(rot(x, y, a, [[3.4, 2.4], [3.4, -2.4], [-3.9, -3], [-3.9, 3]]), TRACK_H + 3.2, 2, P, { convex: true, bevel: 0.3 }), { tone: "hi", lit, crease: "none" });
-  out += solidSvg(extrude(rot(x, y, a, [[-11.8, 5.2], [-11.8, -5.2], [-9, -5.2], [-9, 5.2]]), TRACK_H + 2.8, 3.2, P, { convex: true, bevel: 0.2 }), { tone: "hi", lit, crease: "none" });
-  return out;
+  if (stopped) out += lineSvg(ring(x, y, 17, TRACK_H + 0.1, P, 28), { tone: "lit", dashed: true, free: true });
+  return out + parts.map((p) => p[1]).join("");
 }
 const poseOf = (s) => poseAt(s.u, s.kind === "pit" || s.kind === "box");
 
@@ -201,17 +224,17 @@ function draw() {
   const sA = stateAt(r.A, tau), sB = stateAt(r.B, tau);
   const pA = poseOf(sA), pB = poseOf(sB);
   // the cars would overlap at gaps of a couple of seconds, so close gaps are drawn a little wider than true
-  const shownB = sA.d + (sB.d - sA.d) + 0.02 * Math.tanh((sB.d - sA.d) / 0.01) - 0.0;
+  const shownB = sA.d + (sB.d - sA.d) + 0.025 * Math.tanh((sB.d - sA.d) / 0.012) - 0.0;
   const bShow = sB.kind === "main" ? poseAt(shownB, false) : pB;
   const gap = gapAt(r, tau);
   // the gap, as a band along the track between the two cars
   const lo = Math.min(sA.d, shownB), hi = Math.max(sA.d, shownB), pts = [];
   for (let u = lo; u < hi; u += 0.006) pts.push(loopAt(u));
   pts.push(loopAt(hi));
-  const tone = gap > 0 ? "red" : "lit";
+  const tone = gap > 0 ? "red" : "green";
   el.band.innerHTML = pts.length > 1 ? '<path class="iso-line" data-tone="' + tone + '" data-free="both" d="' + onTop(pts, TRACK_H + 1.6, P) + '" style="stroke-width:1.6"/>' : "";
-  const items = [[pA, false, sA.kind === "box"], [bShow, true, sB.kind === "box"]].sort((a, b) => depthOf([a[0].x, a[0].y, 0], P) - depthOf([b[0].x, b[0].y, 0], P));
-  el.cars.innerHTML = items.map(([pose, lit, stopped]) => car(pose, lit, stopped)).join("") + [[pA, "A"], [bShow, "B"]].map(([pose, name]) => faceTextSvg(topMatrix([pose.x, pose.y - 12], TRACK_H + 7, P, "x"), name, { size: 5, tone: "hi", anchor: "middle" })).join("");
+  const items = [[pA, "car-a", sA.kind === "box"], [bShow, "car-b", sB.kind === "box"]].sort((a, b) => depthOf([a[0].x, a[0].y, 0], P) - depthOf([b[0].x, b[0].y, 0], P));
+  el.cars.innerHTML = items.map(([pose, cls, stopped]) => car(pose, cls, stopped)).join("") + [[pA, "A"], [bShow, "B"]].map(([pose, name]) => faceTextSvg(topMatrix([pose.x, pose.y - 13], TRACK_H + 8, P, "x"), name, { size: 5, tone: "hi", anchor: "middle" }).replace("<text ", '<text style="fill:' + (name === "A" ? "#2f5bea" : "#f0481e") + ';font-weight:700" ')).join("");
   needles[0].setAttribute("d", needleAt(GAUGES[0], sA.age));
   needles[1].setAttribute("d", needleAt(GAUGES[1], sB.age));
   const slat = p - RIG.P_MIN;
@@ -264,12 +287,20 @@ stage.addEventListener("keydown", (event) => {
 draw();
 `;
 
+const carColour = (cls, c) => `.${cls}>.iso-fill{fill:${c.fill}}.${cls}>.iso-top{fill:${c.top}}.${cls}>.iso-shade[data-shade="0"]{fill:${c.s0}}.${cls}>.iso-shade[data-shade="1"]{fill:${c.s1}}.${cls}>.iso-shade[data-shade="2"]{fill:${c.s2}}.${cls}>.iso-shade[data-shade="3"]{fill:${c.s3}}.${cls}>.iso-edge{stroke:${c.edge}}`;
+const CAR_CSS =
+  carColour("car-a", { fill: "#2f5bea", top: "#7d99f7", s0: "#1c3aa8", s1: "#2347c0", s2: "#2a52d6", s3: "#3862ea", edge: "#12247a" }) +
+  carColour("car-b", { fill: "#f0481e", top: "#ff8a63", s0: "#a82c0c", s1: "#c43713", s2: "#dc4119", s3: "#ee5128", edge: "#7a1f06" }) +
+  `.car-dark.car-a>.iso-fill,.car-dark.car-a>.iso-top{fill:#1c3aa8}.car-dark.car-b>.iso-fill,.car-dark.car-b>.iso-top{fill:#a82c0c}` +
+  `.car-helmet>.iso-fill,.car-helmet>.iso-top{fill:#fff}.car-helmet>.iso-shade{fill:#d8d8d4}.car-helmet>.iso-edge{stroke:#333}` +
+  `.car-tyre>.iso-fill{fill:#1a1a1c}.car-tyre>.iso-top{fill:#3a3a3e}.car-tyre>.iso-shade{fill:#202024}.car-tyre>.iso-edge{stroke:#000}`;
 const svg = k.figureSvg({
   width: WIDTH,
   height: HEIGHT,
   label:
     "An oval circuit with a pit lane on the near straight, and two cars: A in front, B a few seconds behind. A band stretched along the track between them shows the gap. Car B pits on the lap you pick and A stops one lap later. A row of slats inside the oval shows, for each pit lap, how far ahead B ends up once both have stopped: the slats rise past a crossover lap where the fresh tyres have beaten the gap. Two dials show tyre age.",
   body: [
+    `<style>${CAR_CSS}</style>`,
     plate(),
     pitLane(),
     track(),
