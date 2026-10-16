@@ -13,29 +13,28 @@ const WIDTH = 640;
 const HEIGHT = 420;
 
 // Two glass-fronted tanks, each a one-pot-thick slice, so the inside of the pot can be seen from the front.
-const PLATE = { x: -112, y: -42, w: 224, d: 94, r: 8 };
+const PLATE = { x: -112, y: -58, w: 224, d: 112, r: 8 };
 const PLATE_H = 12;
 const FOOT_H = 5;
 
-const TW = 82; // tank outer width
-const DP = 18; // tank depth
-const WALL = 3;
-const YF = -16; // the glass front
-const YB = YF - DP;
+const PR = 38; // pot radius: each pot is a round pot sliced in half, with a glass pane on the cut
+const WALL = 2.5;
+const RI = PR - WALL;
+const TW = PR * 2;
+const YF = -10; // the glass pane on the cut
 const BASE_H = 3;
 const FLOOR_H = 4;
 const Z0 = BASE_H + FLOOR_H; // inside floor
 const SPAN = 64; // inner height, which is one rim height of liquid
 const RIM_Z = Z0 + SPAN;
 const TOP_Z = RIM_Z + 2; // wall lip
-const IX = TW - WALL * 2; // inner width
-const IY0 = YB + WALL;
+const IX = RI * 2; // inner width
 const IY1 = YF - 0.6;
 const TANKS = [
   { key: "water", label: "WATER", x: -52 },
   { key: "milk", label: "MILK", x: 52 },
 ];
-const THERMO = { water: -102, milk: 4 };
+const THERMO = { water: -5, milk: 5 };
 const THERMO_Y = YF + 2;
 const THERMO_FULL = 50; // mercury height at 100 C
 
@@ -73,7 +72,7 @@ const startState = { heat: sim.heat, water: sim.water, milk: sim.milk };
 const P = k.fitProjection(
   [
     ...k.boxCorners(PLATE, -PLATE_H - FOOT_H, 0),
-    ...TANKS.flatMap((t) => [[t.x - TW / 2 - 6, YB, RIM_Z + 42], [t.x + TW / 2 + 6, YF + 12, RIM_Z + 42]]),
+    ...TANKS.flatMap((t) => [[t.x - TW / 2 - 6, YF - PR, RIM_Z + 42], [t.x + TW / 2 + 6, YF + 12, RIM_Z + 42]]),
   ],
   WIDTH,
   HEIGHT,
@@ -124,29 +123,45 @@ function knob() {
 }
 
 /* ---------------------------------------------------------------- tanks */
+// a half disc, round at the back and cut straight at the front, as a ring for the kit's extrude
+const dRing = (cx, cy, radius, front = 0, steps = 28) => {
+  const pts = Array.from({ length: steps + 1 }, (_, i) => { const a = Math.PI + (i / steps) * Math.PI; return [cx + radius * Math.cos(a), cy + radius * Math.sin(a)]; });
+  return front ? [...pts, [cx + radius, cy + front], [cx - radius, cy + front]] : pts;
+};
+const arcPts = (cx, cy, radius, z, steps = 40) => Array.from({ length: steps + 1 }, (_, i) => { const a = Math.PI + (i / steps) * Math.PI; return [cx + radius * Math.cos(a), cy + radius * Math.sin(a), z]; });
+
 function tankBack(t) {
   const out = [];
-  const x0 = t.x - TW / 2;
-  const baseFront = YF + 9;
-  out.push(S(k.slabOf({ x: x0 - 2, y: YB - 2, w: TW + 4, d: baseFront - YB + 2, r: 2 }, 0, BASE_H, P, 4, 0.4), { tone: "mid" }));
-  out.push(S(k.slabOf({ x: x0, y: YB, w: TW, d: DP, r: 1 }, BASE_H, FLOOR_H, P, 3, 0.3), { tone: "mid" }));
-  out.push(S(k.slabOf({ x: x0, y: YB, w: TW, d: WALL, r: 0.6 }, Z0, TOP_Z - Z0, P, 2, 0.3), { tone: "mid" }));
-  out.push(S(k.slabOf({ x: x0, y: YB, w: WALL, d: DP, r: 0.6 }, Z0, TOP_Z - Z0, P, 2, 0.3), { tone: "mid" }));
-  out.push(S(k.slabOf({ x: x0 + TW - WALL, y: YB, w: WALL, d: DP, r: 0.6 }, Z0, TOP_Z - Z0, P, 2, 0.3), { tone: "mid" }));
+  const x0 = t.x - PR;
+  // burner base and the floor of the pot, both round at the back
+  out.push(S(k.extrude(dRing(t.x, YF, PR + 3, 9), 0, BASE_H, P, { convex: true, bevel: 0.4 }), { tone: "mid" }));
+  out.push(L([9, 17, 25, 33].map((r) => k.onTop(arcPts(t.x, YF, r, BASE_H).map(([x, y]) => [x, y]), BASE_H, P)).join(""), { tone: "faint", free: true }));
+  out.push(S(k.extrude(dRing(t.x, YF, PR), BASE_H, FLOOR_H, P, { convex: true, bevel: 0.3 }), { tone: "mid" }));
+  // the inside of the back wall: a curved face from the floor to the rim, with ribs
+  const rimIn = arcPts(t.x, YF, RI, TOP_Z).map(at);
+  const baseIn = arcPts(t.x, YF, RI, Z0).map(at);
+  const wall = k.pathOf([...rimIn, ...baseIn.slice().reverse()], true);
+  out.push(`<path class="iso-shade" data-shade="1" d="${wall}"/>`);
+  out.push(L(Array.from({ length: 11 }, (_, i) => { const a = Math.PI + ((i + 1) / 12) * Math.PI; const x = t.x + RI * Math.cos(a), y = YF + RI * Math.sin(a); return k.segment([x, y, Z0], [x, y, TOP_Z], P); }).join(""), { tone: "faint" }));
+  out.push(L(k.pathOf(rimIn) + k.pathOf(baseIn), { tone: "mid" }));
   // the label strip and heater lamps on the base's front margin
-  out.push(k.faceTextSvg(k.topMatrix([x0 + 5, YF + 6.3], BASE_H, P, "x"), t.label, { size: 3, tone: "hi", anchor: "start" }));
-  out.push(t.key === "water" ? "" : "");
-  out.push(Array.from({ length: 6 }, (_, i) => `<g data-lamp="${t.key}-${i}">${S(k.cylinder(x0 + 38 + i * 6.8, YF + 4.6, 1.7, BASE_H, 1.2, P, 16, 0.2), { tone: "hi" })}</g>`).join(""));
+  out.push(k.faceTextSvg(k.topMatrix([x0 + 6, YF + 6.3], BASE_H, P, "x"), t.label, { size: 3, tone: "hi", anchor: "start" }));
+  out.push(Array.from({ length: 6 }, (_, i) => `<g data-lamp="${t.key}-${i}">${S(k.cylinder(t.x + 2 + i * 6.8, YF + 4.6, 1.7, BASE_H, 1.2, P, 16, 0.2), { tone: "hi" })}</g>`).join(""));
   return out.join("");
 }
 function tankFront(t) {
   const out = [];
-  const x0 = t.x - TW / 2;
-  const x1 = t.x + TW / 2;
-  // the glass pane
+  const x0 = t.x - PR;
+  const x1 = t.x + PR;
+  // the glass pane on the cut, the rim, and the wall's thickness at the top
   const pane = [[x0, YF, BASE_H], [x1, YF, BASE_H], [x1, YF, TOP_Z], [x0, YF, TOP_Z]].map(at);
   out.push(L(k.pathOf(pane, true), { tone: "mid" }));
+  out.push(L(k.onTop(arcPts(t.x, YF, PR, TOP_Z).map(([x, y]) => [x, y]), TOP_Z, P), { tone: "mid" }));
   out.push(L(k.segment([x0 + 7, YF, TOP_Z - 6], [x0 + 15, YF, TOP_Z - 24], P) + k.segment([x0 + 12, YF, TOP_Z - 5], [x0 + 18, YF, TOP_Z - 19], P), { tone: "faint", free: true }));
+  // handle, out to the side
+  const hx = t.key === "water" ? x0 - 26 : x1 - 2;
+  out.push(S(k.slabOf({ x: hx, y: YF - 9, w: 28, d: 7, r: 2.4 }, RIM_Z - 16, 4, P, 4, 0.4), { tone: "mid" }));
+  out.push(D([at([t.key === "water" ? hx + 4 : hx + 24, YF - 5.5, RIM_Z - 12])], { size: 0.45 }));
   // the rim line
   out.push(L(k.segment([x0, YF, RIM_Z], [x1, YF, RIM_Z], P), { tone: "red", dashed: true }));
   const note = t.key === "water" ? "STEAM ESCAPES" : "STEAM TRAPPED UNDER THE SKIN";
@@ -162,7 +177,7 @@ function thermometer(key) {
   const zb = BASE_H + 3 + 2 + THERMO_FULL * 0.0;
   for (const [T, len] of [[20, 2.4], [60, 2.4], [100, 4.4]]) {
     const z = 8 + ((T - 20) / 80) * THERMO_FULL;
-    const sx = key === "water" ? 1 : -1;
+    const sx = key === "water" ? -1 : 1;
     out.push(L(k.segment([x + sx * 2.2, THERMO_Y + 2.2, z], [x + sx * (2.2 + len), THERMO_Y + 2.2, z], P), { tone: T === 100 ? "red" : "mid", free: true }));
   }
   return out.join("");
@@ -176,7 +191,12 @@ const P = ${JSON.stringify(P)};
 const TANKS = ${JSON.stringify(TANKS)};
 const THERMO = ${JSON.stringify(THERMO)};
 const FOAM = ${JSON.stringify(FOAM)};
-const TW = ${TW}, YF = ${YF}, YB = ${YB}, WALL = ${WALL}, BASE_H = ${BASE_H}, Z0 = ${Z0}, SPAN = ${SPAN}, RIM_Z = ${RIM_Z}, IX = ${IX}, IY0 = ${IY0}, IY1 = ${IY1};
+const PR = ${PR}, RI = ${RI}, TW = ${TW}, YF = ${YF}, WALL = ${WALL}, BASE_H = ${BASE_H}, Z0 = ${Z0}, SPAN = ${SPAN}, RIM_Z = ${RIM_Z}, IX = ${IX}, IY1 = ${IY1};
+const dRing = (cx, cy, radius, front = 0, steps = 28) => {
+  const pts = Array.from({ length: steps + 1 }, (_, i) => { const a = Math.PI + (i / steps) * Math.PI; return [cx + radius * Math.cos(a), cy + radius * Math.sin(a)]; });
+  return front ? [...pts, [cx + radius, cy + front], [cx - radius, cy + front]] : pts;
+};
+const dSlab = (cx, radius, front, z, h, bevel) => extrude(dRing(cx, IY1, radius, front), z, h, P, { convex: true, bevel });
 const THERMO_Y = ${THERMO_Y}, THERMO_FULL = ${THERMO_FULL}, KNOB_Y = ${KNOB_Y}, KNOB_X0 = ${KNOB_X0}, KNOB_SPAN = ${KNOB_SPAN};
 const stage = document.querySelector(".iso-stage");
 const svg = stage.querySelector("svg");
@@ -229,7 +249,7 @@ function tank(t, pot, hn) {
   const over = Math.max(0, level - 1), capB = Math.min(4, over * 28), capTop = top > RIM_Z + 0.5;
   let out = "";
   // liquid
-  out += solidSvg(slabOf({ x: x0, y: IY0, w: IX, d: IY1 - IY0, r: 0.4 }, Z0, Math.max(1, Math.min(surface, RIM_Z) - Z0), P, 2, 0.3), { tone: milk ? "hi" : "mid", lit: milk, crease: "lo" });
+  out += solidSvg(dSlab(t.x, RI, 0, Z0, Math.max(1, Math.min(surface, RIM_Z) - Z0), 0.3), { tone: milk ? "hi" : "mid", lit: milk, crease: "lo" });
   // bubbles rising from the heated floor
   const rings = [];
   for (const b of f.bubbles) {
@@ -241,8 +261,8 @@ function tank(t, pot, hn) {
   if (milk && level > pot.vol + 0.01) {
     // foam: packed bubbles between the liquid and the skin
     const foamTop = top, cut = Math.min(foamTop, RIM_Z);
-    out += solidSvg(slabOf({ x: x0, y: IY0, w: IX, d: IY1 - IY0, r: 0.4 }, Math.min(surface, RIM_Z), Math.max(0.6, cut - Math.min(surface, RIM_Z)), P, 2, 0.3), { tone: "hi", lit: true, crease: "none" });
-    if (capTop) out += solidSvg(slabOf({ x: x0 - capB, y: IY0 - capB, w: IX + capB * 2, d: IY1 - IY0 + capB * 2, r: 3 }, RIM_Z, top - RIM_Z, P, 6, 0.8), { tone: "hi", lit: true, crease: "lo" });
+    out += solidSvg(dSlab(t.x, RI, 0, Math.min(surface, RIM_Z), Math.max(0.6, cut - Math.min(surface, RIM_Z)), 0.3), { tone: "hi", lit: true, crease: "none" });
+    if (capTop) out += solidSvg(dSlab(t.x, RI + capB, capB, RIM_Z, top - RIM_Z, 0.8), { tone: "hi", lit: true, crease: "lo" });
     const foam = [];
     const fh = top - surface;
     for (const [fxp, fz, fr] of FOAM) {
@@ -255,8 +275,8 @@ function tank(t, pot, hn) {
   }
   if (milk && pot.skin > 0.03) {
     // the skin: a film over the top, thicker as it sets
-    const plan = capTop ? { x: x0 - capB, y: IY0 - capB, w: IX + capB * 2, d: IY1 - IY0 + capB * 2, r: 3 } : { x: x0 - 0.3, y: IY0 - 0.3, w: IX + 0.6, d: IY1 - IY0 + 0.6, r: 0.6 };
-    out += solidSvg(slabOf(plan, top, 0.5 + 1.5 * pot.skin, P, 6, 0.3), { tone: "hi", crease: "none" });
+    const skinSlab = capTop ? dSlab(t.x, RI + capB, capB, top, 0.5 + 1.5 * pot.skin, 0.3) : dSlab(t.x, RI + 0.3, 0, top, 0.5 + 1.5 * pot.skin, 0.3);
+    out += solidSvg(skinSlab, { tone: "hi", crease: "none" });
   }
   return out;
 }
@@ -279,7 +299,7 @@ function above(t, pot) {
   const level = levelOf(pot), top = levelZ(level), x0 = t.x - IX / 2;
   let out = "";
   // steam escaping out of the open top (it is trapped under a skin)
-  out += dotsSvg(f.steam.map((s) => { const [px, py] = iso([t.x + s.x, (IY0 + IY1) / 2, s.z], P); return [px, py, 0.9 * (1 - s.t / 1.2)]; }), { size: 0.9, tone: "hi" });
+  out += dotsSvg(f.steam.map((s) => { const [px, py] = iso([t.x + s.x, IY1 - 14, s.z], P); return [px, py, 0.9 * (1 - s.t / 1.2)]; }), { size: 0.9, tone: "hi" });
   // milk running down the glass, drops off the tips, and the puddle on the plate
   if (milk) {
     const spill = clamp(pot.spilled / 0.9, 0, 1), wet = clamp((level - 0.92) / 0.08, 0, 1);
@@ -319,7 +339,7 @@ function above(t, pot) {
   // the spoon
   if (milk && stirT > 0) {
     const sx = t.x + Math.sin((1 - stirT / 0.8) * 14) * 24, zt = RIM_Z + 34;
-    out += solidSvg(slabOf({ x: sx - 1.3, y: (IY0 + IY1) / 2 - 1.3, w: 2.6, d: 2.6, r: 1.2 }, top, zt - top, P, 6, 0.3), { tone: "hi", lit: true, crease: "none" });
+    out += solidSvg(slabOf({ x: sx - 1.3, y: IY1 - 15.3, w: 2.6, d: 2.6, r: 1.2 }, top, zt - top, P, 6, 0.3), { tone: "hi", lit: true, crease: "none" });
   }
   return out;
 }
@@ -396,7 +416,7 @@ const svg = k.figureSvg({
   width: WIDTH,
   height: HEIGHT,
   label:
-    "Two glass-fronted tanks on one burner, water on the left and milk on the right, with a thermometer by each and a heat knob on a rail at the front. At a rolling boil both read 100 degrees. In the water, bubbles rise from the heated floor and pop at the surface, letting the steam escape, so the level stays put. In the milk a skin forms on top and stops the bubbles, so foam piles up under it, passes the dashed rim line and runs down the outside.",
+    "Two round pots on one burner, each sliced in half and fronted with a glass pane, water on the left and milk on the right, with a thermometer by each and a heat knob on a rail at the front. At a rolling boil both read 100 degrees. In the water, bubbles rise from the heated floor and pop at the surface, letting the steam escape, so the level stays put. In the milk a skin forms on top and stops the bubbles, so foam piles up under it, passes the dashed rim line and runs down the outside.",
   body: [
     plate(),
     tankGroup(TANKS[0]),
