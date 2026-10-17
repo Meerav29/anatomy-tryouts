@@ -12,6 +12,7 @@ Interactive isometric figures: small physical machines that explain an idea. Bui
 | [chai-boilover](chai-boilover/) | Why milk boils over and water doesn't: a skin traps the steam |
 | [undercut](undercut/) | Why pitting early can beat a car ahead: fresh tyres repay the stop |
 | [ackermann](ackermann/) | Why a kart's inside wheel turns more: all four wheels must aim at one centre |
+| [drs-slot-gap](drs-slot-gap/) | Why opening a wing's slot gap cuts drag: the flow over the flap lets go |
 
 More are planned: see [IDEAS.md](IDEAS.md).
 
@@ -38,3 +39,5 @@ Open the HTML file in a browser. Move the pointer across the figure to change th
 ![undercut](undercut/preview.png)
 
 ![ackermann](ackermann/preview.png)
+
+![drs slot gap](drs-slot-gap/preview.png)

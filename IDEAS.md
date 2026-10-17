@@ -7,7 +7,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 
 ## F1 and racing
 - [x] **tyre-window** — reciprocating friction tester: rubber block on a heated platen, spring-measured grip, a 30-slat comb of grip vs temperature with a probe. Window ~80-102 C; hot = blisters, wear x18, crumbs.
-- [ ] **drs-slot-gap** — two flaps on a rail, a pin that opens the gap, a comb of smoke lines that stalls when it opens.
+- [x] **drs-slot-gap** — a wind tunnel seen through its glass side with an F1 rear wing (main plane + flap) in orange. A lever opens the flap and the slot; smoke lines hug the wing and thread the slot while it is narrow, then past ~38 mm the flow lets go and a red wake appears. Drag and downforce bars fall, readout shows the km/h gained. Light-first (`--dark` for the dark build). Numbers are illustrative.
 - [x] **undercut** — oval circuit with a pit lane; car B (7 s behind) pits on the lap you pick, A answers a lap later. A band along the track shows the gap; a comb of slats shows how far ahead B ends up for every pit lap, with a break-even line. Crossover lap 11 falls out of tyre age vs a 22 s stop.
 
 ## Go-karting and simulators
