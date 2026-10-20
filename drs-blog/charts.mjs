@@ -11,7 +11,7 @@ const hbar = (x, y, w, h, fill) => `<path d="M${x} ${y} H${x + w - 4} a4 4 0 0 1
 
 /* ------------------------------------------------ 1: overtakes per race */
 function overtakes() {
-  const W = 760, H = 392, x0 = 118, x1 = 690, max = 50;
+  const W = 760, H = 270, x0 = 118, x1 = 690, max = 50;
   const sx = (v) => x0 + ((x1 - x0) * v) / max;
   const rows = [
     { year: "2010", v: 23.8, c: C.slate },
@@ -28,20 +28,19 @@ function overtakes() {
   // the moment DRS arrives, drawn between the first two rows
   const yMid = 134 + 42 - 9;
   g += `<path d="M${sx(26)} ${yMid - 2} h0" stroke="none"/>`;
-  g += text(x0 - 40, 350, "Average overtakes per race, as counted by Autosport.", { size: 12, fill: C.muted }) + text(x0 - 40, 368, "2013, 2014 and later seasons were not in the source I found.", { size: 12, fill: C.muted });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${FONT}'>
   <rect width="${W}" height="${H}" fill="${C.surface}"/>
-  ${text(30, 44, "The year DRS arrived, overtakes per race nearly doubled", { size: 21, fill: C.ink, weight: 700 })}
-  ${text(30, 68, "By 2015 it was back down to 26.8, a lot closer to where it started.", { size: 13, fill: C.ink2 })}
+  <g transform="translate(0,-60)">
   <circle cx="${x0 + 6}" cy="100" r="5" fill="${C.slate}"/>${text(x0 + 18, 105, "Before DRS", { size: 12.5 })}
   <circle cx="${x0 + 116}" cy="100" r="5" fill="${C.orange}"/>${text(x0 + 128, 105, "With DRS", { size: 12.5 })}
   ${g}
+  </g>
   </svg>`;
 }
 
 /* ------------------------------------------------ 2: teams invent, regulators respond */
 function timeline() {
-  const W = 760, H = 650, left = 46, step = 37;
+  const W = 760, H = 540, left = 46, step = 37;
   const X = (y) => left + (y - 2009) * step;
   const yTop = 270, yAxis = 332, yBot = 394;
   let g = `<line x1="${X(2009) - 12}" x2="${X(2026) + 12}" y1="${yAxis}" y2="${yAxis}" stroke="${C.grid}" stroke-width="1.5"/>`;
@@ -54,20 +53,20 @@ function timeline() {
   for (const [a, b] of pairs) g += `<line x1="${X(a)}" x2="${X(b)}" y1="${yTop + 8}" y2="${yBot - 8}" stroke="${C.slate}" stroke-width="1.5" stroke-dasharray="3 4"/>`;
   const dot = (x, y, fill) => `<circle cx="${x}" cy="${y}" r="6" fill="${fill}" stroke="${C.surface}" stroke-width="2"/>`;
   const team = [
-    [2010, 2, "anchor", ["McLaren F-duct:", "a hole you cover", "with your knee"]],
-    [2012, 1, "middle", ["Mercedes", "'double DRS'"]],
-    [2020, 1, "middle", ["Mercedes DAS:", "steering wheel", "moves the toe"]],
-    [2023, 2, "middle", ["Red Bull: rivals say", "~20 km/h from DRS"]],
-    [2025, 3, "end", ["'Mini-DRS':", "wings that flex"]],
+    [2010, 2, "anchor", ["McLaren", "F-duct"]],
+    [2012, 1, "middle", ["Mercedes", "double DRS"]],
+    [2020, 1, "middle", ["Mercedes", "DAS"]],
+    [2023, 2, "middle", ["Red Bull", "DRS advantage"]],
+    [2025, 3, "end", ["Flexing", "rear wings"]],
   ];
   const rule = [
     [2009, 1, "start", ["Adjustable", "front wing"]],
-    [2011, 2, "middle", ["DRS arrives. F-duct and", "adjustable wing: out"]],
+    [2011, 2, "middle", ["DRS introduced"]],
     [2013, 1, "middle", ["Double DRS", "banned"]],
-    [2019, 1, "middle", ["Wider, taller wing:", "slot gap 65 to 85mm"]],
+    [2019, 1, "middle", ["Rear wing wider and", "taller, slot 65 to 85mm"]],
     [2021, 2, "middle", ["DAS", "banned"]],
     [2025, 1, "middle", ["Flex tests", "tightened"]],
-    [2026, 3, "end", ["DRS replaced by", "active aero"]],
+    [2026, 3, "end", ["DRS replaced", "by active aero"]],
   ];
   for (const [yr, lv, an, ls] of team) {
     const lx = an === "anchor" ? X(yr) - 6 : X(yr);
@@ -81,18 +80,17 @@ function timeline() {
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${FONT}'>
   <rect width="${W}" height="${H}" fill="${C.surface}"/>
-  ${text(30, 44, "Teams invent, the rule makers answer, repeat", { size: 21, fill: C.ink, weight: 700 })}
-  ${text(30, 68, "Every few years a team found speed in a gap in the rules, and most of them got closed the next season.", { size: 13, fill: C.ink2 })}
+  <g transform="translate(0,-60)">
   <circle cx="34" cy="94" r="5" fill="${C.orange}"/>${text(46, 99, "A team found something", { size: 12.5 })}
   <circle cx="206" cy="94" r="5" fill="${C.blue}"/>${text(218, 99, "The rules changed", { size: 12.5 })}
   ${g}
-  ${text(30, 620, "Dotted lines join an idea to the rule that answered it. Sources in the notes under the post.", { size: 12, fill: C.muted })}
+  </g>
   </svg>`;
 }
 
 /* ------------------------------------------------ 3: how much speed DRS gives, depending who you ask */
 function speed() {
-  const W = 760, H = 380, x0 = 270, x1 = 690, max = 25;
+  const W = 760, H = 300, x0 = 270, x1 = 690, max = 25;
   const sx = (v) => x0 + ((x1 - x0) * v) / max;
   let g = "";
   for (const t of [0, 5, 10, 15, 20, 25]) g += `<line x1="${sx(t)}" x2="${sx(t)}" y1="128" y2="302" stroke="${C.grid}" stroke-width="1"/>` + text(sx(t), 322, String(t), { size: 12, fill: C.muted, anchor: "middle" });
@@ -111,15 +109,15 @@ function speed() {
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${FONT}'>
   <rect width="${W}" height="${H}" fill="${C.surface}"/>
-  ${text(30, 44, "How much speed does DRS give? Depends who you ask", { size: 21, fill: C.ink, weight: 700 })}
-  ${text(30, 68, "Four sources, four answers, none measured the same way.", { size: 13, fill: C.ink2 })}
+  <g transform="translate(0,-60)">
   <circle cx="34" cy="100" r="5" fill="${C.blue}"/>${text(46, 105, "Published figure", { size: 12.5 })}
   <circle cx="176" cy="100" r="5" fill="${C.orange}"/>${text(188, 105, "Rivals' estimate", { size: 12.5 })}
   ${g}
+  </g>
   </svg>`;
 }
 
-const charts = [["chart-1-overtakes", overtakes()], ["chart-2-teams-vs-rules", timeline()], ["chart-3-speed", speed()]];
+const charts = [["figure-1-overtakes", overtakes()], ["figure-3-teams-vs-rules", timeline()], ["figure-2-speed", speed()]];
 const page = `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#fcfcfb">${charts.map(([id, svg]) => `<div id="${id}" style="width:760px">${svg}</div>`).join("")}</body>`;
 writeFileSync(new URL("./charts.html", import.meta.url), page);
 console.log(charts.map(([id]) => id).join(" "));
