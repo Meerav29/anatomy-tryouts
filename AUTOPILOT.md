@@ -1,6 +1,6 @@
 # Autopilot: Oct 20-26, 2026
 
-Scheduled cloud routines are building new figures from IDEAS.md while Meerav is travelling. **Everything lands on the `auto/queue` branch. `main` only has the setup commit** (this file, CLAUDE.md, the vendored skill).
+Scheduled cloud routines are building new figures from IDEAS.md (the two unbuilt ideas plus two from its shelf; the originally queued four were already built) while Meerav is travelling. **Everything lands on the `auto/queue` branch. `main` only has the setup commit** (this file, CLAUDE.md, the vendored skill).
 
 - Queue and per-figure acceptance: [docs/autopilot/queue.md](docs/autopilot/queue.md) (read it on `auto/queue`; that copy is the live one)
 - Calls a routine made on Meerav's behalf: [docs/autopilot/decisions.md](docs/autopilot/decisions.md)
@@ -11,10 +11,10 @@ Scheduled cloud routines are building new figures from IDEAS.md while Meerav is 
 
 | Day | Figure |
 |---|---|
-| Tue Oct 20 (evening) | undercut |
-| Thu Oct 22 | drs-slot-gap |
-| Sat Oct 24 | ackermann |
-| Mon Oct 26 | chai-boilover |
+| Tue Oct 20 (evening) | force-feedback |
+| Thu Oct 22 | carb-ice |
+| Sat Oct 24 | calibration-jars |
+| Mon Oct 26 | kart-solid-axle |
 
 Builds run around 9am ET and the review routine runs around 2pm ET (Tuesday's one-off build runs at 4pm and gets a 9pm review).
 
