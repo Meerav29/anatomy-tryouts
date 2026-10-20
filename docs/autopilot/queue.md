@@ -26,34 +26,40 @@ The size cap is relaxed for this repo: built HTML is generated. Count only `buil
 
 ---
 
-## slice-1: undercut
+## Re-queued 2026-10-20
+
+The original four slices (undercut, drs-slot-gap, ackermann, chai-boilover) turned out to be **already built** on `main` (Oct 13-16). The first build run correctly halted rather than overwrite them (see decisions.md). They were replaced with the two unbuilt IDEAS.md lines, plus two from IDEAS.md's "Shelved: liked, not picked yet" list. Picking those two was a setup-time call, not Meerav's.
+
+Don't rebuild or edit any existing figure folder. Note that ackermann is marked "built, but not liked". Its notes (blocky shapes, lines running off the plate, reads as a diagram rather than a machine) are worth avoiding in every new figure.
+
+## slice-1: force-feedback
 
 Status: todo
 
-IDEAS.md: two cars on a conveyor and a pit-lane switch. Per-lap fresh-tyre gain against a fixed stop cost, so the crossover lap falls out of the numbers.
+IDEAS.md: a wheel on a motor, a spring and a torque dial, showing what a sim sends vs what a real rack does.
 
-Notes: model the gap as `gap(lap) = gap0 - pit_loss + sum(fresh-tyre delta per lap since the stop)`, with the delta decaying as the new tyre wears. The readout shows the lap where the undercut car comes out ahead, or "never". Pick the pit-loss and tyre-delta numbers from a real circuit and cite it.
+Notes: two torque traces side by side, the real steering rack's self-aligning torque and the sim's FFB output (clipped at the motor's max, filtered, with latency). The pointer sets the steering angle or the slip. The readout shows rack torque, FFB torque, clipping %, and latency in ms. Typical direct-drive wheel torque (Nm) and FFB update rates should be cited.
 
-## slice-2: drs-slot-gap
-
-Status: todo
-
-IDEAS.md: two flaps on a rail, a pin that opens the gap, and a comb of smoke lines that stalls when it opens.
-
-Notes: the readout is drag reduction or top-speed gain against slot gap. Keep the aero claim qualitative unless you can cite a number. Smoke-line stall is the visual payoff.
-
-## slice-3: ackermann
+## slice-2: carb-ice
 
 Status: todo
 
-IDEAS.md: a four-bar steering linkage on a plate. The inside wheel turns more than the outside.
+IDEAS.md: a venturi on a stand with a temperature dial showing the drop that can ice it up.
 
-Notes: the geometry should be real. The inside and outside angles come from wheelbase, track and steering-arm angle, and the readout shows both angles plus the percent Ackermann. The pointer steers.
+Notes: ambient temperature and humidity in (two knobs, or a pointer x/y), venturi temperature drop out, and the carb-icing probability band from the standard FAA icing chart (cite it). Frost grows on the throttle plate when you're in the band, and carb heat is a toggle.
 
-## slice-4: chai-boilover
+## slice-3: calibration-jars
 
 Status: todo
 
-IDEAS.md: a pot with a milk skin and a rising foam level, showing why it boils over.
+IDEAS.md shelf: "calibration jars". A row of jars, one per predicted-probability bin (0-10% … 90-100%). Each jar fills with beads for the events forecast in that bin, coloured hit or miss, and a level line marks the bin's predicted rate. A well-calibrated forecaster's hit-fill matches each line. Sits next to threshold-sieve and class-imbalance.
 
-Notes: the mechanism is a protein skin trapping steam bubbles until the foam lifts the skin over the rim. The pointer sets the burner, and the readout shows temperature and foam height. Stirring or lowering the flame (a second control) breaks the skin.
+Notes: a knob morphs the forecaster from calibrated to overconfident to underconfident, and the readout shows expected calibration error. Use a synthetic seeded forecast set. It's fine to use the shape grid-prophet's phase-2 notes describe ("too generous at the back, too timid at the front") as one preset, labelled illustrative.
+
+## slice-4: kart-solid-axle
+
+Status: todo
+
+IDEAS.md shelf: "kart solid axle (no differential)". Why a kart has no diff, and why it lifts the inside rear wheel to turn.
+
+Notes: a kart chassis on a turntable from a rear three-quarter view, both rear wheels on one axle. In a corner the inside wheel has to cover less distance than the outside one, so with no diff one of them scrubs. Chassis flex and caster jacking lift the inside rear, and the scrub stops. The pointer sets the corner radius. The readout shows the inner/outer path-length difference and the inside-wheel lift needed. Avoid ackermann's problems: keep it a machine on a plate, not floor lines.
