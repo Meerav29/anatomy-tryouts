@@ -12,7 +12,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 
 ## Go-karting and simulators
 - [x] **ackermann** — two go-karts on one pad, same steering input: parallel steering (violet) vs Ackermann (teal). Axle lines run back to the rear axle's line: they land at one point for Ackermann, miss by a track width for parallel, and the parallel kart's tyres scuff and its scrub dial goes red. Knob on a rail sets the lock. Light-first build (`--dark` for the dark one). Built, but not liked as a visualization (blocky karts, long floor lines run off the plate at small angles, the idea reads as a diagram more than a machine); kept for the record, not promoted.
-- [ ] **force-feedback** — wheel on a motor, spring and torque dial: what a sim sends vs what a real rack does.
+- [x] **force-feedback** — wheel on a motor, spring and torque dial: what a sim sends vs what a real rack does. Built as a bench: a tyre block on a slip turntable and a spring-loaded rack (real), a direct-drive motor with a wheel and an 8 Nm stop pin (sim), and a two-pen plotter drawing rack torque vs slip on one card and the clipped FFB on the other. Pointer across sets slip, up/down sets FFB strength.
 - [x] **friction-circle** — XY pen plotter over a dish; a puck driven by accel/brake/corner demand is stopped by a ring of pegs at mu*g. Slick/inter/wet shrinks the ring; a pen traces the g-g path; lamp lights on a slide.
 
 ## Aviation (prop planes)
