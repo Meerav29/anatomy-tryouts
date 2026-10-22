@@ -34,7 +34,7 @@ Don't rebuild or edit any existing figure folder. Note that ackermann is marked 
 
 ## slice-1: force-feedback
 
-Status: todo
+Status: in-review
 
 IDEAS.md: a wheel on a motor, a spring and a torque dial, showing what a sim sends vs what a real rack does.
 
