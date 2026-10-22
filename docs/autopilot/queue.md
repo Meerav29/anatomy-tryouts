@@ -34,7 +34,9 @@ Don't rebuild or edit any existing figure folder. Note that ackermann is marked 
 
 ## slice-1: force-feedback
 
-Status: in-review
+Status: merged
+PR: [#3](https://github.com/Meerav29/anatomy-tryouts/pull/3), squash-merged to `auto/queue` by the review routine 2026-10-22 as `97197f2`.
+Review re-ran from the PR head (Chromium 1194 at `/opt/pw-browsers`): both themes rebuild byte-identical to the committed HTML; `lines.mjs` prints `line ends: 0 of 644` for dark and light; `capture.mjs --width 390` shows `scrolls sideways: no`, `console: clean` in both themes; desktop captures clean. Size 563 (build.mjs 470 + rig.mjs 93). Whether it *teaches* is still the owner's call.
 
 IDEAS.md: a wheel on a motor, a spring and a torque dial, showing what a sim sends vs what a real rack does.
 
