@@ -44,7 +44,7 @@ Notes: two torque traces side by side, the real steering rack's self-aligning to
 
 ## slice-2: carb-ice
 
-Status: todo
+Status: in-progress
 
 IDEAS.md: a venturi on a stand with a temperature dial showing the drop that can ice it up.
 

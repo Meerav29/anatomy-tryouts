@@ -14,6 +14,7 @@ Interactive isometric figures: small physical machines that explain an idea. Bui
 | [ackermann](ackermann/) | Why a kart's inside wheel turns more: all four wheels must aim at one centre |
 | [drs-slot-gap](drs-slot-gap/) | Why opening a wing's slot gap cuts drag: the flow over the flap lets go |
 | [force-feedback](force-feedback/) | What a sim wheel sends vs what a real rack does: the motor clips the torque peak you steer by |
+| [carb-ice](carb-ice/) | Why a carburettor ices on a mild, damp day: fuel evaporating in the venturi chills the air ~32 °C |
 
 More are planned: see [IDEAS.md](IDEAS.md).
 
@@ -44,3 +45,5 @@ Open the HTML file in a browser. Move the pointer across the figure to change th
 ![drs slot gap](drs-slot-gap/preview.png)
 
 ![force feedback](force-feedback/preview.png)
+
+![carb ice](carb-ice/preview.png)
