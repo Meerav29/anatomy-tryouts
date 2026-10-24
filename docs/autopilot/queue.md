@@ -44,7 +44,9 @@ Notes: two torque traces side by side, the real steering rack's self-aligning to
 
 ## slice-2: carb-ice
 
-Status: todo
+Status: held
+PR: [#4](https://github.com/Meerav29/anatomy-tryouts/pull/4), not merged by the review routine 2026-10-24: over the 600-line cap, flagged for the owner.
+`build.mjs` 544 + `rig.mjs` 97 = 641 lines (the queue counts only these two). Everything else passed when the review re-ran it from the PR head (`88ac135`) on Chromium 1243 at `/opt/pw-browsers`: both themes rebuild byte-identical to the committed HTML; `lines.mjs` prints `line ends: 0 of 848` for dark and light; `capture.mjs --width 390` shows `scrolls sideways: no`, `console: clean` in both themes; desktop is clean. The review read the desktop, phone and close-up PNGs and saw no broken parts. Scope is the new folder, README, IDEAS and the two autopilot docs. Merging it is the owner's call.
 
 IDEAS.md: a venturi on a stand with a temperature dial showing the drop that can ice it up.
 
