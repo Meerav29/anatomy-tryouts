@@ -16,7 +16,7 @@ Each figure is a real tabletop machine whose working *is* the concept. One folde
 - [x] **friction-circle** — XY pen plotter over a dish; a puck driven by accel/brake/corner demand is stopped by a ring of pegs at mu*g. Slick/inter/wet shrinks the ring; a pen traces the g-g path; lamp lights on a slide.
 
 ## Aviation (prop planes)
-- [ ] **carb-ice** — venturi on a stand with a temperature dial showing the drop that can ice it up.
+- [x] **carb-ice** — venturi on a stand with a temperature dial showing the drop that can ice it up. Built as an updraft venturi on an airbox fed by a cold-air filter and a hot-air muff on an exhaust stack, frost growing on the throttle plate you look down on, a two-hand thermometer (air in vs air in the venturi), a wet-and-dry-bulb hygrometer, and the carb icing chart lying on the bench with a pin at the day's air. Pointer sets temperature and humidity, click pulls carb heat.
 
 ## Coffee and chai
 - [x] **chai-boilover** — two round half-pots (glass pane on the cut) on one burner, water vs milk, a thermometer by each (both read 100 C). Bubbles rise from the floor: in water they pop and the steam escapes; in milk a skin stops them, foam stacks under it, passes the red rim line and runs down the glass. Heat knob on a rail follows the pointer; click stirs (spoon, breaks the skin). Boils over above ~half heat.
