@@ -45,25 +45,25 @@ Rejected: A 25 Nm high-end base (Simucube 2 Pro / Podium DD): with this model it
 Blast radius: This figure only.
 
 
-## 2026-10-24 slice-2 carb-ice, PR #(this run's PR)
+## 2026-10-24 slice-2 carb-ice, PR #4
 Question: The FAA carburettor icing chart (SAIB CE-09-35 / PHAK fig. 7-12) is a graphic, and the sandbox's network blocked every copy of it (faa.gov mirrors, CAA, CASA, Transport Canada, EASA: proxy refused). How should the chart's zones be drawn?
 Chosen: Four nested lobes in temperature and humidity, each `rhMin + (100 - rhMin) u^4` across a temperature span, fitted to the chart's published reading points found by search: light icing about -12..38 C down to ~30% RH; serious at descent power about -7..32 C; serious at any power below 21 C with RH above 80%. The moderate zone's edges (60%, -7..27 C) are illustrative. The card's caption says the edges are approximate and not for flight use.
 Rejected: (a) Digitising the chart from memory point by point: it would look exact and isn't. (b) Halting the build: the chart's shape, not its exact edges, is the idea.
 Blast radius: The zone outlines on the chart card and the zone name in the readout. When the owner has the chart to hand, the four `ZONES` rows in `carb-ice/rig.mjs` are the only thing to retune.
 
-## 2026-10-24 slice-2 carb-ice, PR #(this run's PR)
+## 2026-10-24 slice-2 carb-ice, PR #4
 Question: What is "the venturi temperature drop" as one number, and does it move?
 Chosen: A fixed ~32 K: fuel evaporating at a 12.5:1 best-power mixture (L / (AFR cp) = 349 / (12.5 x 1.005) = 27.8 K, all fuel evaporated, an upper bound) plus the speed-up in the throat (v^2 / 2cp at an illustrative 90 m/s = 4.0 K). It's in line with the "up to 70 F (39 K)" usually quoted. The dial shows air in and venturi air as two hands with the drop as an arc between them; the chart, not the dial, decides whether ice forms (the real body is warmed by the engine, so a sub-zero venturi number alone doesn't mean ice).
 Rejected: A drop that varies with throttle: needs a third control and a flow model the brief doesn't ask for. Icing decided by "venturi < 0 C": it disagrees with the chart, which is the source pilots use.
 Blast radius: This figure only.
 
-## 2026-10-24 slice-2 carb-ice, PR #(this run's PR)
+## 2026-10-24 slice-2 carb-ice, PR #4
 Question: How does carb heat change the state, and what does the chart pin show with heat on?
 Chosen: Heat adds 50 K (the 90 F rise required by 14 CFR 23.1093(a)(1) before amendment 23-64). The same moisture is then re-expressed as humidity at the heated temperature (Magnus formula), and the zone is looked up for the heated air, which always falls off the chart's warm edge, so the frost melts. The pin keeps showing the outside air, the way a pilot reads the chart. Inputs: pointer x = temperature, pointer y = humidity, click (or Space) = carb heat. Touch: a drag sets the air, a tap toggles heat.
 Rejected: Moving the pin to the heated point (it leaves the chart for every input). A separate humidity knob drag control (two knobs only shown, driven by the pointer, as in force-feedback).
 Blast radius: This figure only.
 
-## 2026-10-24 slice-2 carb-ice, PR #(this run's PR)
+## 2026-10-24 slice-2 carb-ice, PR #4
 Question: The brief names a venturi, a stand and a dial. What else goes on the bench?
 Chosen: Added an airbox with a cold inlet (pleated filter) and a hot inlet (finned heater muff on an exhaust stack), a float bowl with a jet arm into the throat, and a wet-and-dry-bulb psychrometer whose columns read the air temperature and the wet-bulb temperature (Stull 2011), so the humidity input is an instrument, not a number. The frost is the figure's one colour (a pale blue-grey token per theme).
 Rejected: A hygrometer dial (a third dial reads as a gauge cluster). Monochrome frost (it disappeared against the dark bore in the light theme).

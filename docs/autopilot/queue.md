@@ -44,7 +44,8 @@ Notes: two torque traces side by side, the real steering rack's self-aligning to
 
 ## slice-2: carb-ice
 
-Status: in-progress
+Status: in-review
+PR: [#4](https://github.com/Meerav29/anatomy-tryouts/pull/4). Built 2026-10-24 (Saturday's run; the schedule slipped one run, see the slice-1 decision). Checks ran on the sandbox Chromium: `line ends: 0 of 848` both themes, phone `scrolls sideways: no`, console clean. build.mjs + rig.mjs = 641 lines (over 600; reason in the PR).
 
 IDEAS.md: a venturi on a stand with a temperature dial showing the drop that can ice it up.
 
