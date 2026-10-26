@@ -44,3 +44,9 @@ Chosen: An 8 Nm direct-drive base (Fanatec CSL DD with boost kit / GT DD Pro cla
 Rejected: A 25 Nm high-end base (Simucube 2 Pro / Podium DD): with this model it rarely clips, which hides the point. A power-assisted rack: it adds an assist curve the brief doesn't ask for.
 Blast radius: This figure only.
 
+
+## 2026-10-26 slice-3 calibration-jars, no PR (build halted)
+Question: slice-3 is the first `todo`, but slice-2 (carb-ice) is `held`: PR #4 is open and unmerged (over the 600-line cap). The build routine's rule is "if the highest-numbered non-todo slice is NOT `merged`, STOP". The Oct 24 review comment read `held` as not triggering the halt. Build calibration-jars anyway?
+Chosen: Halt. `held` is not `merged`, and the build prompt's rule is literal. No branch, no PR, slice-3 left `todo`. Reported on issue #2.
+Rejected: Building past the held slice. It follows the review routine's reading, which the build rule doesn't support. It would also branch from an `auto/queue` that lacks carb-ice, so README.md, IDEAS.md and queue.md would conflict with PR #4 whichever merges second.
+Blast radius: Schedule only. calibration-jars and kart-solid-axle are left `todo` after the window closes. To unblock: merge or trim PR #4 (the queue then says `merged`), or set slice-2 to `blocked`/`merged` by hand and fire the build routine again.
