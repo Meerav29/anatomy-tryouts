@@ -16,7 +16,7 @@ Scheduled cloud routines are building new figures from IDEAS.md (the two unbuilt
 | Sat Oct 24 | calibration-jars |
 | Mon Oct 26 | kart-solid-axle |
 
-Builds run around 9am ET and the review routine runs around 2pm ET (Tuesday's one-off build runs at 4pm and gets a 9pm review).
+Builds run around 9am ET and the review routine runs around 2pm ET (Tuesday's build ran early afternoon and gets an extra 6:30pm review).
 
 ## Coming back
 
